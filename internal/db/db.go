@@ -41,5 +41,7 @@ func Migrate(gdb *gorm.DB) error {
 		&models.PreciosProdServ{},
 		&models.CategoriaCosto{},
 		&models.CostosProdServ{},
+		&models.IndicadoresMacro{},
+		&models.ComposicionFinanciamiento{},
 	)
 }

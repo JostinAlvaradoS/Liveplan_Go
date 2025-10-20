@@ -118,3 +118,46 @@ type CostosProdServ struct {
 	ProductoServicio   *ProductoServicio `json:"producto_servicio,omitempty" gorm:"foreignKey:ProductoServicioID;constraint:OnDelete:CASCADE"`
 	CategoriaCosto     *CategoriaCosto   `json:"categoria_costo,omitempty" gorm:"foreignKey:CategoriaCostoID;constraint:OnDelete:CASCADE"`
 }
+
+// IndicadoresMacro almacena indicadores macroeconómicos asociados a un plan
+type IndicadoresMacro struct {
+	ID            uint         `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID uint         `json:"plan_negocio_id" gorm:"not null;index"`
+	TipoCambio    float64      `json:"tipo_cambio" gorm:"column:tipo_cambio;type:numeric(15,6)"`
+	Inflacion     float64      `json:"inflacion" gorm:"type:numeric(6,2)"`
+	TasaDeuda     float64      `json:"tasa_deuda" gorm:"column:tasa_deuda;type:numeric(6,2)"`
+	TasaInteres   float64      `json:"tasa_interes" gorm:"column:tasa_interes;type:numeric(6,2)"`
+	TasaImpuesto  float64      `json:"tasa_impuesto" gorm:"column:tasa_impuesto;type:numeric(6,2)"`
+	PTU           float64      `json:"ptu" gorm:"type:numeric(6,2)"`
+	DiasxMes      int          `json:"diasxmes" gorm:"column:diasxmes"`
+	PlanNegocio   *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+}
+
+// ComposicionFinanciamiento representa la composición de financiamiento para un plan
+type ComposicionFinanciamiento struct {
+	ID                uint         `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID     uint         `json:"plan_negocio_id" gorm:"not null;index"`
+	CapitalPorcentaje float64      `json:"capital_porcentaje" gorm:"column:capital_porcentaje;type:numeric(6,2)"`
+	CapitalCalculado  *float64     `json:"capital_calculado" gorm:"column:capital_calculado;type:numeric(15,2)"`
+	DeudaPorcentaje   float64      `json:"deuda_porcentaje" gorm:"column:deuda_porcentaje;type:numeric(6,2)"`
+	DeudaCalculado    *float64     `json:"deuda_calculado" gorm:"column:deuda_calculado;type:numeric(15,2)"`
+	PlanNegocio       *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+}
+
+// Depreciacion representa las depreciaciones calculadas a partir de un detalle de inversión inicial
+type Depreciacion struct {
+	ID                  uint     `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID       uint     `json:"plan_negocio_id" gorm:"not null;index"`
+	DetalleInversionID  uint     `json:"detalle_inversion_id" gorm:"not null;index"`
+	VidaUtil            int      `json:"vida_util" gorm:"column:vida_util"`
+	DepreciacionMensual *float64 `json:"depreciacion_mensual" gorm:"column:depreciacion_mensual;type:numeric(15,2)"`
+	DepreciacionAnio1   *float64 `json:"depreciacion_anio1" gorm:"column:depreciacion_anio1;type:numeric(15,2)"`
+	DepreciacionAnio2   *float64 `json:"depreciacion_anio2" gorm:"column:depreciacion_anio2;type:numeric(15,2)"`
+	DepreciacionAnio3   *float64 `json:"depreciacion_anio3" gorm:"column:depreciacion_anio3;type:numeric(15,2)"`
+	DepreciacionAnio4   *float64 `json:"depreciacion_anio4" gorm:"column:depreciacion_anio4;type:numeric(15,2)"`
+	DepreciacionAnio5   *float64 `json:"depreciacion_anio5" gorm:"column:depreciacion_anio5;type:numeric(15,2)"`
+	ValorRescate        *float64 `json:"valor_rescate" gorm:"column:valor_rescate;type:numeric(15,2)"`
+
+	PlanNegocio      *PlanNegocio             `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+	DetalleInversion *DetalleInversionInicial `json:"detalle_inversion,omitempty" gorm:"foreignKey:DetalleInversionID;constraint:OnDelete:CASCADE"`
+}
