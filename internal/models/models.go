@@ -149,7 +149,6 @@ type Depreciacion struct {
 	ID                  uint     `json:"id" gorm:"primaryKey;autoIncrement"`
 	PlanNegocioID       uint     `json:"plan_negocio_id" gorm:"not null;index"`
 	DetalleInversionID  uint     `json:"detalle_inversion_id" gorm:"not null;index"`
-	VidaUtil            int      `json:"vida_util" gorm:"column:vida_util"`
 	DepreciacionMensual *float64 `json:"depreciacion_mensual" gorm:"column:depreciacion_mensual;type:numeric(15,2)"`
 	DepreciacionAnio1   *float64 `json:"depreciacion_anio1" gorm:"column:depreciacion_anio1;type:numeric(15,2)"`
 	DepreciacionAnio2   *float64 `json:"depreciacion_anio2" gorm:"column:depreciacion_anio2;type:numeric(15,2)"`
@@ -160,4 +159,17 @@ type Depreciacion struct {
 
 	PlanNegocio      *PlanNegocio             `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
 	DetalleInversion *DetalleInversionInicial `json:"detalle_inversion,omitempty" gorm:"foreignKey:DetalleInversionID;constraint:OnDelete:CASCADE"`
+}
+
+// PresupuestoVenta representa el presupuesto de ventas para un producto dentro de un plan
+type PresupuestoVenta struct {
+	ID            uint              `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID uint              `json:"plan_negocio_id" gorm:"not null;index"`
+	ProductoID    uint              `json:"producto_id" gorm:"not null;index"`
+	Anio          int               `json:"anio" gorm:"not null;index"`
+	Crecimiento   *float64          `json:"crecimiento" gorm:"type:numeric(6,2)"`
+	Mensual       *float64          `json:"mensual" gorm:"type:numeric(15,2)"`
+	Anual         *float64          `json:"anual" gorm:"type:numeric(15,2)"`
+	PlanNegocio   *PlanNegocio      `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+	Producto      *ProductoServicio `json:"producto,omitempty" gorm:"foreignKey:ProductoID;constraint:OnDelete:CASCADE"`
 }

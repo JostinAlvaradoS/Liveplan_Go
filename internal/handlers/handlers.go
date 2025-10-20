@@ -32,6 +32,7 @@ func (a *App) Routes() http.Handler {
 	RegisterIndicadoresMacroRoutes(mux, a.DB)
 	RegisterComposicionFinanciamientoRoutes(mux, a.DB)
 	RegisterDepreciacionesRoutes(mux, a.DB)
+	RegisterPresupuestoVentaRoutes(mux, a.DB)
 	RegisterInversionesRoutes(mux, a.DB)
 	RegisterDetallesInversionRoutes(mux, a.DB)
 

@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/JostinAlvaradoS/liveplan_backend_go/internal/models"
+	"github.com/JostinAlvaradoS/liveplan_backend_go/internal/procedimientos"
 	"gorm.io/gorm"
 )
 
@@ -54,6 +55,20 @@ func CreateDetalle(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// create initial Depreciacion record for this detalle with vida_util = 0 and other fields NULL
+	dep := models.Depreciacion{
+		PlanNegocioID:       item.PlanNegocioID,
+		DetalleInversionID:  item.ID,
+		DepreciacionMensual: nil,
+		DepreciacionAnio1:   nil,
+		DepreciacionAnio2:   nil,
+		DepreciacionAnio3:   nil,
+		DepreciacionAnio4:   nil,
+		DepreciacionAnio5:   nil,
+		ValorRescate:        nil,
+	}
+	// ignore error if it fails; creation should be best-effort but we log to response if necessary
+	_ = db.Create(&dep).Error
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(item)
 }
@@ -76,11 +91,11 @@ func UpdateDetallePatch(db *gorm.DB, w http.ResponseWriter, r *http.Request, id 
 	}
 	delete(body, "id")
 	delete(body, "ID")
-
 	if err := db.Model(&item).Updates(body).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	procedimientos.CalcularDepreciaciones(db, item.PlanNegocioID)
 	json.NewEncoder(w).Encode(item)
 }
 

@@ -87,6 +87,45 @@ func UpdateVariacionAnualPatch(db *gorm.DB, w http.ResponseWriter, r *http.Reque
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// If any of the anio1..anio5 fields were updated, propagate the value to
+	// PresupuestoVenta.crecimiento for that plan and year.
+	for k, v := range body {
+		var year int
+		switch k {
+		case "anio1":
+			year = 1
+		case "anio2":
+			year = 2
+		case "anio3":
+			year = 3
+		case "anio4":
+			year = 4
+		case "anio5":
+			year = 5
+		default:
+			continue
+		}
+		// v will be float64 when decoded from JSON numbers, or nil if null
+		if v == nil {
+			if err := db.Model(&models.PresupuestoVenta{}).
+				Where("plan_negocio_id = ? AND anio = ?", item.PlanNegocioID, year).
+				Update("crecimiento", nil).Error; err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			continue
+		}
+		// try numeric
+		if f, ok := v.(float64); ok {
+			if err := db.Model(&models.PresupuestoVenta{}).
+				Where("plan_negocio_id = ? AND anio = ?", item.PlanNegocioID, year).
+				Update("crecimiento", f).Error; err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+	}
 	json.NewEncoder(w).Encode(item)
 }
 

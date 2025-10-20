@@ -9,9 +9,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func ListDepreciaciones(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
-	var items []models.Depreciacion
-	query := db.Preload("PlanNegocio").Preload("DetalleInversion").Preload("DetalleInversion.Inversion")
+func ListPresupuestosVenta(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+	var items []models.PresupuestoVenta
+	query := db.Preload("PlanNegocio").Preload("Producto")
 	if pid := r.URL.Query().Get("plan_id"); pid != "" {
 		id, err := strconv.Atoi(pid)
 		if err != nil {
@@ -28,9 +28,9 @@ func ListDepreciaciones(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(items)
 }
 
-func ListDepreciacionesByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Request, planID uint) {
-	var items []models.Depreciacion
-	if err := db.Preload("DetalleInversion").Preload("DetalleInversion.Inversion").Where("plan_negocio_id = ?", planID).Find(&items).Error; err != nil {
+func ListPresupuestosVentaByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Request, planID uint) {
+	var items []models.PresupuestoVenta
+	if err := db.Preload("Producto").Where("plan_negocio_id = ?", planID).Find(&items).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -38,9 +38,9 @@ func ListDepreciacionesByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(items)
 }
 
-func GetDepreciacion(db *gorm.DB, w http.ResponseWriter, r *http.Request, id uint) {
-	var item models.Depreciacion
-	if err := db.Preload("PlanNegocio").Preload("DetalleInversion").Preload("DetalleInversion.Inversion").First(&item, id).Error; err != nil {
+func GetPresupuestoVenta(db *gorm.DB, w http.ResponseWriter, r *http.Request, id uint) {
+	var item models.PresupuestoVenta
+	if err := db.Preload("PlanNegocio").Preload("Producto").First(&item, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			http.NotFound(w, r)
 			return
@@ -52,8 +52,8 @@ func GetDepreciacion(db *gorm.DB, w http.ResponseWriter, r *http.Request, id uin
 	json.NewEncoder(w).Encode(item)
 }
 
-func CreateDepreciacion(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
-	var item models.Depreciacion
+func CreatePresupuestoVenta(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+	var item models.PresupuestoVenta
 	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -66,8 +66,8 @@ func CreateDepreciacion(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(item)
 }
 
-func UpdateDepreciacionPatch(db *gorm.DB, w http.ResponseWriter, r *http.Request, id uint) {
-	var item models.Depreciacion
+func UpdatePresupuestoVentaPatch(db *gorm.DB, w http.ResponseWriter, r *http.Request, id uint) {
+	var item models.PresupuestoVenta
 	if err := db.First(&item, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			http.NotFound(w, r)
@@ -90,8 +90,8 @@ func UpdateDepreciacionPatch(db *gorm.DB, w http.ResponseWriter, r *http.Request
 	json.NewEncoder(w).Encode(item)
 }
 
-func DeleteDepreciacion(db *gorm.DB, w http.ResponseWriter, r *http.Request, id uint) {
-	if err := db.Delete(&models.Depreciacion{}, id).Error; err != nil {
+func DeletePresupuestoVenta(db *gorm.DB, w http.ResponseWriter, r *http.Request, id uint) {
+	if err := db.Delete(&models.PresupuestoVenta{}, id).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
