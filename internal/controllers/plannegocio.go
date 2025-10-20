@@ -39,10 +39,83 @@ func CreatePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := db.Create(&item).Error; err != nil {
+	// Use transaction to ensure related default records are created atomically
+	err := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&item).Error; err != nil {
+			return err
+		}
+
+		// Create default VariacionAnual (all zeros)
+		va := models.VariacionAnual{
+			PlanNegocioID: item.ID,
+			Año1:          0,
+			Año2:          0,
+			Año3:          0,
+			Año4:          0,
+			Año5:          0,
+		}
+		if err := tx.Create(&va).Error; err != nil {
+			return err
+		}
+
+		// Create default VariablesDeSensibilidad (zeros)
+		vs := models.VariablesDeSensibilidad{
+			Cantidad_volumen: 0,
+			Precio:           0,
+			Costo:            0,
+			PlanNegocioID:    item.ID,
+		}
+		if err := tx.Create(&vs).Error; err != nil {
+			return err
+		}
+
+		// Create default Supuesto
+		sup := models.Supuesto{
+			PlanNegocioID:         item.ID,
+			PorcenVentas:          0,
+			VariacionPorcenVentas: 0,
+			PTU:                   0,
+			ISR:                   0,
+		}
+		if err := tx.Create(&sup).Error; err != nil {
+			return err
+		}
+
+		// Create default IndicadoresMacro
+		im := models.IndicadoresMacro{
+			PlanNegocioID: item.ID,
+			TipoCambio:    0,
+			Inflacion:     0,
+			TasaDeuda:     0,
+			TasaInteres:   0,
+			TasaImpuesto:  0,
+			PTU:           0,
+			DiasxMes:      30,
+		}
+		if err := tx.Create(&im).Error; err != nil {
+			return err
+		}
+
+		// Create default ComposicionFinanciamiento
+		cf := models.ComposicionFinanciamiento{
+			PlanNegocioID:     item.ID,
+			CapitalPorcentaje: 100,
+			CapitalCalculado:  nil,
+			DeudaPorcentaje:   0,
+			DeudaCalculado:    nil,
+		}
+		if err := tx.Create(&cf).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(item)
 }
@@ -80,4 +153,15 @@ func DeletePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request, id u
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+
+func ListPlanesByUser(db *gorm.DB, w http.ResponseWriter, r *http.Request, userID uint) {
+	var items []models.PlanNegocio
+	if err := db.Where("autor = ?", userID).Find(&items).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(items)
 }

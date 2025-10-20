@@ -39,7 +39,7 @@ func RegisterPlanNegocioRoutes(mux *http.ServeMux, db *gorm.DB) {
 		}
 		switch r.Method {
 		case http.MethodGet:
-			controllers.GetPlanNegocio(db, w, r, id)
+			controllers.ListPlanesByUser(db, w, r, id)
 		case http.MethodPatch:
 			controllers.UpdatePlanNegocioPatch(db, w, r, id)
 		case http.MethodDelete:

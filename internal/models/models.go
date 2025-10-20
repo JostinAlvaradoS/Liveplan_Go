@@ -173,3 +173,4 @@ type PresupuestoVenta struct {
 	PlanNegocio   *PlanNegocio      `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
 	Producto      *ProductoServicio `json:"producto,omitempty" gorm:"foreignKey:ProductoID;constraint:OnDelete:CASCADE"`
 }
+
