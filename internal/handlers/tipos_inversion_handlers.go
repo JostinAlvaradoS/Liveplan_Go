@@ -32,17 +32,36 @@ func RegisterPlanNegocioRoutes(mux *http.ServeMux, db *gorm.DB) {
 		}
 	})
 	mux.HandleFunc("/plan/", func(w http.ResponseWriter, r *http.Request) {
-		id, err := controllers.ParseUintFromPath(r.URL.Path)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
+		// path is /plan/{idOrUid}
+		seg := r.URL.Path[len("/plan/"):]
+		if seg == "" {
+			http.Error(w, "missing id", http.StatusBadRequest)
 			return
 		}
+
 		switch r.Method {
 		case http.MethodGet:
-			controllers.ListPlanesByUser(db, w, r, id)
+			// allow string UID or numeric id
+			if id, err := controllers.ParseUintFromPath(r.URL.Path); err == nil {
+				controllers.ListPlanesByUser(db, w, r, id)
+				return
+			}
+			// fallback: treat as user UID string
+			controllers.ListPlanesByUserUID(db, w, r, seg)
 		case http.MethodPatch:
+			// Patch requires numeric id
+			id, err := controllers.ParseUintFromPath(r.URL.Path)
+			if err != nil {
+				http.Error(w, "invalid id", http.StatusBadRequest)
+				return
+			}
 			controllers.UpdatePlanNegocioPatch(db, w, r, id)
 		case http.MethodDelete:
+			id, err := controllers.ParseUintFromPath(r.URL.Path)
+			if err != nil {
+				http.Error(w, "invalid id", http.StatusBadRequest)
+				return
+			}
 			controllers.DeletePlanNegocio(db, w, r, id)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)

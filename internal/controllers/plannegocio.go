@@ -155,10 +155,20 @@ func DeletePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request, id u
 	w.WriteHeader(http.StatusNoContent)
 }
 
-
 func ListPlanesByUser(db *gorm.DB, w http.ResponseWriter, r *http.Request, userID uint) {
 	var items []models.PlanNegocio
 	if err := db.Where("autor = ?", userID).Find(&items).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(items)
+}
+
+// ListPlanesByUserUID lista planes cuyo campo Autor coincide con el UID (string).
+func ListPlanesByUserUID(db *gorm.DB, w http.ResponseWriter, r *http.Request, userUID string) {
+	var items []models.PlanNegocio
+	if err := db.Where("autor = ?", userUID).Find(&items).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
