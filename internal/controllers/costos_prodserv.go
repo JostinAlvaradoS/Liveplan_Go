@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/JostinAlvaradoS/liveplan_backend_go/internal/models"
+	"github.com/JostinAlvaradoS/liveplan_backend_go/internal/procedimientos"
 	"gorm.io/gorm"
 )
 
@@ -81,11 +82,17 @@ func UpdateCostosProdServPatch(db *gorm.DB, w http.ResponseWriter, r *http.Reque
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	recalc, _ := body["recalc"].(bool)
 	delete(body, "id")
 	delete(body, "ID")
+	delete(body, "recalc")
 	if err := db.Model(&item).Updates(body).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+	if recalc {
+		planID := item.PlanNegocioID
+		_ = procedimientos.Recalcular(db, planID)
 	}
 	json.NewEncoder(w).Encode(item)
 }

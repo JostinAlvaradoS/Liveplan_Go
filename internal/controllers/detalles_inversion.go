@@ -89,13 +89,17 @@ func UpdateDetallePatch(db *gorm.DB, w http.ResponseWriter, r *http.Request, id 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	recalc, _ := body["recalc"].(bool)
 	delete(body, "id")
 	delete(body, "ID")
+	delete(body, "recalc")
 	if err := db.Model(&item).Updates(body).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	procedimientos.CalcularDepreciaciones(db, item.PlanNegocioID)
+	if recalc {
+		_ = procedimientos.Recalcular(db, item.PlanNegocioID)
+	}
 	json.NewEncoder(w).Encode(item)
 }
 

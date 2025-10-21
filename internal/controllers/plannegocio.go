@@ -139,6 +139,7 @@ func UpdatePlanNegocioPatch(db *gorm.DB, w http.ResponseWriter, r *http.Request,
 	}
 	delete(body, "id")
 	delete(body, "ID")
+	delete(body, "recalc")
 
 	if err := db.Model(&item).Updates(body).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
