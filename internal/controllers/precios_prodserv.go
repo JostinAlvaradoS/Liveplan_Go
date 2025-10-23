@@ -98,12 +98,6 @@ func UpdatePreciosProdServPatch(db *gorm.DB, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Always update derived precio_calc when precio changed
-	if precioUpdated {
-		// item.ID contains the updated precio record id; pass planID and precioID
-		_ = procedimientos.CalcularPreciosYCostosPorPlan(db, item.PlanNegocioID)
-	}
-
 	if recalc {
 		planID := item.PlanNegocioID
 		_ = procedimientos.Recalcular(db, planID)
