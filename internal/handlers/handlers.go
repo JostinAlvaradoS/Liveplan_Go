@@ -11,21 +11,21 @@ type App struct {
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        origin := "http://localhost:4200"
-        w.Header().Set("Access-Control-Allow-Origin", origin)
-        w.Header().Set("Vary", "Origin")
-        w.Header().Set("Access-Control-Allow-Credentials", "true")
-        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, X-Custom-Header")
-        w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := "http://localhost:4200"
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Vary", "Origin")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, X-Custom-Header")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
 
-        if r.Method == http.MethodOptions {
-            w.WriteHeader(http.StatusNoContent)
-            return
-        }
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 
-        next.ServeHTTP(w, r)
-    })
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (a *App) Routes() http.Handler {
@@ -53,6 +53,7 @@ func (a *App) Routes() http.Handler {
 	RegisterPresupuestoVentaRoutes(mux, a.DB)
 	RegisterInversionesRoutes(mux, a.DB)
 	RegisterDetallesInversionRoutes(mux, a.DB)
+	RegisterVentasDineroRoutes(mux, a.DB)
 
 	return corsMiddleware(mux)
 }
