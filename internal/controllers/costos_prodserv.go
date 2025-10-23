@@ -83,6 +83,7 @@ func UpdateCostosProdServPatch(db *gorm.DB, w http.ResponseWriter, r *http.Reque
 		return
 	}
 	recalc, _ := body["recalc"].(bool)
+
 	delete(body, "id")
 	delete(body, "ID")
 	delete(body, "recalc")
@@ -90,6 +91,7 @@ func UpdateCostosProdServPatch(db *gorm.DB, w http.ResponseWriter, r *http.Reque
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	if recalc {
 		planID := item.PlanNegocioID
 		_ = procedimientos.Recalcular(db, planID)

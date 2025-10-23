@@ -150,6 +150,7 @@ func UpdateProductoServicioPatch(db *gorm.DB, w http.ResponseWriter, r *http.Req
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	if recalc {
 		// Call Recalcular for the associated plan
 		planID := item.PlanNegocioID

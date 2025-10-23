@@ -138,9 +138,8 @@ type ComposicionFinanciamiento struct {
 	ID                uint         `json:"id" gorm:"primaryKey;autoIncrement"`
 	PlanNegocioID     uint         `json:"plan_negocio_id" gorm:"not null;index"`
 	CapitalPorcentaje float64      `json:"capital_porcentaje" gorm:"column:capital_porcentaje;type:numeric(6,2)"`
-	CapitalCalculado  *float64     `json:"capital_calculado" gorm:"column:capital_calculado;type:numeric(15,2)"`
 	DeudaPorcentaje   float64      `json:"deuda_porcentaje" gorm:"column:deuda_porcentaje;type:numeric(6,2)"`
-	DeudaCalculado    *float64     `json:"deuda_calculado" gorm:"column:deuda_calculado;type:numeric(15,2)"`
+	Total_Inversion   float64      `json:"total_inversion" gorm:"column:total_inversion;type:numeric(15,2)"`
 	PlanNegocio       *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
 }
 
@@ -174,3 +173,28 @@ type PresupuestoVenta struct {
 	Producto      *ProductoServicio `json:"producto,omitempty" gorm:"foreignKey:ProductoID;constraint:OnDelete:CASCADE"`
 }
 
+type DatosPrestamo struct {
+	ID            uint         `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID uint         `json:"plan_negocio_id" gorm:"not null;index"`
+	Monto         float64      `json:"monto" gorm:"type:numeric(15,2);not null"`
+	TasaAnual     float64      `json:"tasa_anual" gorm:"column:tasa_anual;type:numeric(6,2);not null"`
+	PeriodosCapitalizacion    int          `json:"periodos_capitalizacion" gorm:"column:periodos_capitalizacion;not null"`
+	TasaMensual   float64      `json:"tasa_mensual" gorm:"column:tasa_mensual;type:numeric(6,4);not null"`
+	Cuota        float64      `json:"cuota" gorm:"column:cuota;type:numeric(15,2);not null"`
+	PeriodosAmortizacion      int          `json:"periodos_amortizacion" gorm:"column:periodos_amortizacion;not null"`
+	PlanNegocio   *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+}
+
+type PrestamoCuotas struct {
+	ID             uint         `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID  uint         `json:"plan_negocio_id" gorm:"not null;index"`
+	SaldoInicial  float64      `json:"saldo_inicial" gorm:"column:saldo_inicial;type:numeric(15,2);not null"`
+	PeriodoMes     int          `json:"periodo_mes" gorm:"column:periodo_mes;not null"`
+	Anio           int          `json:"anio" gorm:"column:anio;not null"`
+	Mes            int          `json:"mes" gorm:"column:mes;not null"`
+	Interes        float64      `json:"interes" gorm:"type:numeric(15,2);not null"`
+	Amortizacion   float64      `json:"amortizacion" gorm:"type:numeric(15,2);not null"`
+	CuotaTotal     float64      `json:"cuota_total" gorm:"column:cuota_total;type:numeric(15,2);not null"`
+	SaldoPendiente float64      `json:"saldo_pendiente" gorm:"column:saldo_pendiente;type:numeric(15,2);not null"`
+	PlanNegocio    *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+}

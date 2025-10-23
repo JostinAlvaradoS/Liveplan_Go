@@ -2,8 +2,6 @@ package procedimientos
 
 import (
 	"fmt"
-	"strings"
-	"sync"
 
 	"gorm.io/gorm"
 )
@@ -15,32 +13,24 @@ import (
 // Se ejecutan en paralelo y si alguno falla, se devuelve un error que concatena
 // los errores ocurridos en ambos procedimientos.
 func Recalcular(db *gorm.DB, planID uint) error {
-	var wg sync.WaitGroup
-	errs := make(chan error, 2)
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		errs <- CalcularDepreciaciones(db, planID)
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		errs <- CalcularPresupuestos(db, planID)
-	}()
-
-	wg.Wait()
-	close(errs)
-
-	var parts []string
-	for e := range errs {
-		if e != nil {
-			parts = append(parts, e.Error())
-		}
+	// Stage 1: try to run precios+costos and composicion in parallel, fallback to sequential on error
+	stage1Tasks := []func() error{
+		func() error { return CalcularPreciosYCostosPorPlan(db, planID) },
+		func() error { return CalcularComposicion(db, planID) },
 	}
-	if len(parts) > 0 {
-		return fmt.Errorf("recalcular: %s", strings.Join(parts, "; "))
+	if err := runAdaptive(stage1Tasks); err != nil {
+		return fmt.Errorf("recalcular (stage1): %w", err)
+	}
+
+	// Stage 2: calcular depreciaciones y presupuestos en paralelo
+	// Stage 2: depreciaciones + presupuestos (also adaptive)
+	stage2Tasks := []func() error{
+		func() error { return CalcularDepreciaciones(db, planID) },
+		func() error { return CalcularPresupuestos(db, planID) },
+		func() error { return CalcularPrestamo(db, planID) },
+	}
+	if err := runAdaptive(stage2Tasks); err != nil {
+		return fmt.Errorf("recalcular (stage2): %w", err)
 	}
 	return nil
 }

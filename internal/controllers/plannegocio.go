@@ -99,13 +99,46 @@ func CreatePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 		// Create default ComposicionFinanciamiento
 		cf := models.ComposicionFinanciamiento{
 			PlanNegocioID:     item.ID,
-			CapitalPorcentaje: 100,
-			CapitalCalculado:  nil,
-			DeudaPorcentaje:   0,
-			DeudaCalculado:    nil,
+			CapitalPorcentaje: 50,
+			DeudaPorcentaje:   50,
+			Total_Inversion:   0,
 		}
 		if err := tx.Create(&cf).Error; err != nil {
 			return err
+		}
+
+		// Create default DatosPrestamo and PrestamoCuotas for 5 years (60 meses)
+		dp := models.DatosPrestamo{
+			PlanNegocioID: item.ID,
+			Monto:         0,
+			TasaAnual:    12,
+			PeriodosCapitalizacion: 12,
+			TasaMensual:   1,
+			PeriodosAmortizacion: 60,
+			Cuota:        0,
+		}
+		if err := tx.Create(&dp).Error; err != nil {
+			return err
+		}
+
+		// Create 60 PrestamoCuotas rows, one per month (periodo_mes 1..60)
+		for m := 1; m <= 60; m++ {
+			anio := (m-1)/12 + 1 // 1..5
+			mes := (m-1)%12 + 1  // 1..12
+			pc := models.PrestamoCuotas{
+				PlanNegocioID:  item.ID,
+				PeriodoMes:     m,
+				Anio:           anio,
+				Mes:            mes,
+				SaldoInicial:   0,
+				Interes:        0,
+				Amortizacion:   0,
+				CuotaTotal:     0,
+				SaldoPendiente: 0,
+			}
+			if err := tx.Create(&pc).Error; err != nil {
+				return err
+			}
 		}
 
 		return nil
