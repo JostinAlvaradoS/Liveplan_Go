@@ -106,3 +106,60 @@ func DeleteCostosProdServ(db *gorm.DB, w http.ResponseWriter, r *http.Request, i
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// ReportCostosPorProducto genera un reporte agregado por producto para un plan:
+// para cada producto devuelve los costos por categoría y la sumatoria total.
+func ReportCostosPorProducto(db *gorm.DB, w http.ResponseWriter, r *http.Request, planID uint) {
+	var items []models.CostosProdServ
+	if err := db.Preload("ProductoServicio").Preload("CategoriaCosto").Where("plan_negocio_id = ?", planID).Find(&items).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	type CatCost struct {
+		CategoriaID   uint    `json:"categoria_id"`
+		CategoriaName string  `json:"categoria_nombre"`
+		Costo         float64 `json:"costo"`
+	}
+
+	type ProductReport struct {
+		ProductoID   uint      `json:"producto_id"`
+		ProductoName string    `json:"producto_nombre"`
+		Costos       []CatCost `json:"costos_por_categoria"`
+		Total        float64   `json:"total_producto"`
+	}
+
+	// Aggregate by producto
+	prodMap := make(map[uint]*ProductReport)
+	for _, c := range items {
+		pid := c.ProductoServicioID
+		pr, ok := prodMap[pid]
+		if !ok {
+			name := ""
+			if c.ProductoServicio != nil {
+				name = c.ProductoServicio.Nombre
+			}
+			pr = &ProductReport{ProductoID: pid, ProductoName: name, Costos: []CatCost{}, Total: 0}
+			prodMap[pid] = pr
+		}
+		catName := ""
+		if c.CategoriaCosto != nil {
+			catName = c.CategoriaCosto.Nombre
+		}
+		costoVal := 0.0
+		if c.Costo != nil {
+			costoVal = *c.Costo
+		}
+		pr.Costos = append(pr.Costos, CatCost{CategoriaID: c.CategoriaCostoID, CategoriaName: catName, Costo: costoVal})
+		pr.Total += costoVal
+	}
+
+	// Build result slice
+	var result []ProductReport
+	for _, pr := range prodMap {
+		result = append(result, *pr)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}

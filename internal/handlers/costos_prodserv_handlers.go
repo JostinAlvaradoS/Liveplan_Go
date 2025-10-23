@@ -48,4 +48,18 @@ func RegisterCostosProdServRoutes(mux *http.ServeMux, db *gorm.DB) {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
 	})
+
+	mux.HandleFunc("/costos_prodserv/report_by_plan/", func(w http.ResponseWriter, r *http.Request) {
+		// path expects plan id after the trailing slash
+		id, err := controllers.ParseUintFromPath(r.URL.Path)
+		if err != nil {
+			http.Error(w, "invalid plan id", http.StatusBadRequest)
+			return
+		}
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		controllers.ReportCostosPorProducto(db, w, r, id)
+	})
 }

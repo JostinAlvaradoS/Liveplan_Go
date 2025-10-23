@@ -31,7 +31,7 @@ func ListComposicionFinanciamiento(db *gorm.DB, w http.ResponseWriter, r *http.R
 
 func ListComposicionFinanciamientoByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Request, planID uint) {
 	var items []models.ComposicionFinanciamiento
-	if err := db.Preload("PlanNegocio").Where("plan_negocio_id = ?", planID).Find(&items).Error; err != nil {
+	if err := db.Where("plan_negocio_id = ?", planID).Find(&items).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

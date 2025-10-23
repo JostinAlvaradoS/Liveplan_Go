@@ -92,6 +92,17 @@ func UpdateVariablesDeSensibilidadPatch(db *gorm.DB, w http.ResponseWriter, r *h
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// After updating variables, set VariacionAnual.anio1 from Cantidad_volumen
+	// reload item to get updated Cantidad_volumen (in case it was part of the patch)
+	if err := db.First(&item, item.ID).Error; err == nil {
+		// update variacion_anual.anio1 for this plan
+		d := map[string]interface{}{"anio1": item.Cantidad_volumen}
+		if err := db.Model(&models.VariacionAnual{}).Where("plan_negocio_id = ?", item.PlanNegocioID).Updates(d).Error; err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
 	if recalc {
 		planID := item.PlanNegocioID
 		_ = procedimientos.Recalcular(db, planID)
