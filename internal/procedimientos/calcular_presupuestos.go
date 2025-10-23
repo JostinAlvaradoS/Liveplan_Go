@@ -2,6 +2,7 @@ package procedimientos
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/JostinAlvaradoS/liveplan_backend_go/internal/models"
 	"gorm.io/gorm"
@@ -33,73 +34,95 @@ func CalcularPresupuestos(db *gorm.DB, planID uint) error {
 			return fmt.Errorf("loading presupuestos: %w", err)
 		}
 
+		// group presupuestos by producto
+		byProducto := make(map[uint][]models.PresupuestoVenta)
 		for _, p := range presupuestos {
-			// find venta diaria for this product
+			byProducto[p.ProductoID] = append(byProducto[p.ProductoID], p)
+		}
+
+		for productoID, slice := range byProducto {
+			// sort by Anio asc
+			sort.Slice(slice, func(i, j int) bool { return slice[i].Anio < slice[j].Anio })
+
+			// fetch venta diaria once per producto
 			var vd models.VentaDiaria
-			err := tx.Where("plan_negocio_id = ? AND producto_servicio_id = ?", planID, p.ProductoID).First(&vd).Error
+			err := tx.Where("plan_negocio_id = ? AND producto_servicio_id = ?", planID, productoID).First(&vd).Error
 			if err != nil {
 				if err == gorm.ErrRecordNotFound {
-					// set Mensual/Anual to NULL
+					// for all years set Mensual/Anual to NULL
+					for _, p := range slice {
+						if err := tx.Model(&models.PresupuestoVenta{}).
+							Where("id = ?", p.ID).
+							Updates(map[string]interface{}{"mensual": nil, "anual": nil}).Error; err != nil {
+							return fmt.Errorf("clearing mensual/anual for presupuesto %d: %w", p.ID, err)
+						}
+					}
+					continue
+				}
+				return fmt.Errorf("finding venta_diaria for producto %d: %w", productoID, err)
+			}
+
+			if vd.VentaDia == nil {
+				for _, p := range slice {
 					if err := tx.Model(&models.PresupuestoVenta{}).
 						Where("id = ?", p.ID).
 						Updates(map[string]interface{}{"mensual": nil, "anual": nil}).Error; err != nil {
 						return fmt.Errorf("clearing mensual/anual for presupuesto %d: %w", p.ID, err)
 					}
-					continue
-				}
-				return fmt.Errorf("finding venta_diaria for producto %d: %w", p.ProductoID, err)
-			}
-
-			if vd.VentaDia == nil {
-				if err := tx.Model(&models.PresupuestoVenta{}).
-					Where("id = ?", p.ID).
-					Updates(map[string]interface{}{"mensual": nil, "anual": nil}).Error; err != nil {
-					return fmt.Errorf("clearing mensual/anual for presupuesto %d: %w", p.ID, err)
 				}
 				continue
 			}
 
-			// compute
-			var growth float64
-			if p.Crecimiento != nil {
-				growth = *p.Crecimiento / 100.0
-			}
+			var prevMensual float64
 			ventaDia := float64(*vd.VentaDia)
-			mensual := ventaDia * (1.0 + growth) * float64(diasxmes)
-			anual := mensual * 12.0
 
-			if err := tx.Model(&models.PresupuestoVenta{}).
-				Where("id = ?", p.ID).
-				Updates(map[string]interface{}{"mensual": mensual, "anual": anual}).Error; err != nil {
-				return fmt.Errorf("updating presupuesto %d: %w", p.ID, err)
-			}
-
-			// --- Update VentasDinero for the same plan/product and año ---
-			// VentasDinero.mensual = PresupuestoVenta.mensual (already includes diasxmes)
-			// VentasDinero.anual = mensual * 12
-			ventasMensual := mensual
-			ventasAnual := mensual * 12.0
-
-			// try update existing VentasDinero row for this plan/product/anio
-			upd := map[string]interface{}{"mensual": ventasMensual, "anual": ventasAnual}
-			res := tx.Model(&models.VentasDinero{}).
-				Where("plan_negocio_id = ? AND producto_id = ? AND anio = ?", planID, p.ProductoID, p.Anio).
-				Updates(upd)
-			if res.Error != nil {
-				return fmt.Errorf("updating ventas_dinero for producto %d anio %d: %w", p.ProductoID, p.Anio, res.Error)
-			}
-			if res.RowsAffected == 0 {
-				// create a new row if none existed
-				vdNew := models.VentasDinero{
-					PlanNegocioID: planID,
-					ProductoID:    p.ProductoID,
-					Anio:          p.Anio,
-					Mensual:       ventasMensual,
-					Anual:         ventasAnual,
+			for idx, p := range slice {
+				var growth float64
+				if p.Crecimiento != nil {
+					growth = *p.Crecimiento / 100.0
 				}
-				if err := tx.Create(&vdNew).Error; err != nil {
-					return fmt.Errorf("creating ventas_dinero for producto %d anio %d: %w", p.ProductoID, p.Anio, err)
+
+				var mensual float64
+				if idx == 0 {
+					// first year: use ventaDia * (1+growth) * diasxmes
+					mensual = ventaDia * (1.0 + growth) 
+				} else {
+					// subsequent years: previous year's mensual * (1 + growth)
+					mensual = prevMensual * (1.0 + growth)
 				}
+				anual := mensual * 12.0 * float64(diasxmes)
+
+				// persist presupuesto
+				if err := tx.Model(&models.PresupuestoVenta{}).
+					Where("id = ?", p.ID).
+					Updates(map[string]interface{}{"mensual": mensual, "anual": anual}).Error; err != nil {
+					return fmt.Errorf("updating presupuesto %d: %w", p.ID, err)
+				}
+
+				// update/create ventas_dinero
+				ventasMensual := mensual
+				ventasAnual := anual
+				upd := map[string]interface{}{"mensual": ventasMensual, "anual": ventasAnual}
+				res := tx.Model(&models.VentasDinero{}).
+					Where("plan_negocio_id = ? AND producto_id = ? AND anio = ?", planID, p.ProductoID, p.Anio).
+					Updates(upd)
+				if res.Error != nil {
+					return fmt.Errorf("updating ventas_dinero for producto %d anio %d: %w", p.ProductoID, p.Anio, res.Error)
+				}
+				if res.RowsAffected == 0 {
+					vdNew := models.VentasDinero{
+						PlanNegocioID: planID,
+						ProductoID:    p.ProductoID,
+						Anio:          p.Anio,
+						Mensual:       ventasMensual,
+						Anual:         ventasAnual,
+					}
+					if err := tx.Create(&vdNew).Error; err != nil {
+						return fmt.Errorf("creating ventas_dinero for producto %d anio %d: %w", p.ProductoID, p.Anio, err)
+					}
+				}
+
+				prevMensual = mensual
 			}
 		}
 
