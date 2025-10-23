@@ -13,6 +13,7 @@ import (
 // Se ejecutan en paralelo y si alguno falla, se devuelve un error que concatena
 // los errores ocurridos en ambos procedimientos.
 func Recalcular(db *gorm.DB, planID uint) error {
+	print("INICIO DE RECALCULAR")
 	// Stage 1: try to run precios+costos and composicion in parallel, fallback to sequential on error
 	stage1Tasks := []func() error{
 		func() error { return CalcularPreciosYCostosPorPlan(db, planID) },
@@ -32,5 +33,7 @@ func Recalcular(db *gorm.DB, planID uint) error {
 	if err := runAdaptive(stage2Tasks); err != nil {
 		return fmt.Errorf("recalcular (stage2): %w", err)
 	}
+
+	print("FINAL DE RECALCULAR")
 	return nil
 }

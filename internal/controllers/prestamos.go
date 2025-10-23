@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/JostinAlvaradoS/liveplan_backend_go/internal/models"
+	"github.com/JostinAlvaradoS/liveplan_backend_go/internal/procedimientos"
 	"gorm.io/gorm"
 )
 
@@ -72,11 +73,19 @@ func UpdatePrestamoPatch(db *gorm.DB, w http.ResponseWriter, r *http.Request, id
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	recalc, _ := body["recalc"].(bool)
 	delete(body, "id")
 	delete(body, "ID")
+	delete(body, "recalc")
 	if err := db.Model(&item).Updates(body).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+	if recalc {
+		if err := procedimientos.Recalcular(db, item.PlanNegocioID); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 	json.NewEncoder(w).Encode(item)
 }
@@ -129,11 +138,19 @@ func UpdateDatosPrestamoPatch(db *gorm.DB, w http.ResponseWriter, r *http.Reques
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	recalc, _ := body["recalc"].(bool)
 	delete(body, "id")
 	delete(body, "ID")
+	delete(body, "recalc")
 	if err := db.Model(&item).Updates(body).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+	if recalc {
+		if err := procedimientos.Recalcular(db, item.PlanNegocioID); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	json.NewEncoder(w).Encode(item)
