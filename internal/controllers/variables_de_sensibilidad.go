@@ -101,11 +101,22 @@ func UpdateVariablesDeSensibilidadPatch(db *gorm.DB, w http.ResponseWriter, r *h
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		// Also update PresupuestoVenta.crecimiento for year 1 to match Cantidad_volumen
+		if err := db.Model(&models.PresupuestoVenta{}).
+			Where("plan_negocio_id = ? AND anio = ?", item.PlanNegocioID, 1).
+			Updates(map[string]interface{}{"crecimiento": item.Cantidad_volumen}).Error; err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	if recalc {
 		planID := item.PlanNegocioID
-		_ = procedimientos.Recalcular(db, planID)
+		if err := procedimientos.Recalcular(db, planID); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 	json.NewEncoder(w).Encode(item)
 }
