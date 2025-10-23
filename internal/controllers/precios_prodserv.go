@@ -84,11 +84,6 @@ func UpdatePreciosProdServPatch(db *gorm.DB, w http.ResponseWriter, r *http.Requ
 	}
 	recalc, _ := body["recalc"].(bool)
 
-	// detect precio update and remove control keys
-	precioUpdated := false
-	if _, ok := body["precio"]; ok {
-		precioUpdated = true
-	}
 	delete(body, "id")
 	delete(body, "ID")
 	delete(body, "recalc")
