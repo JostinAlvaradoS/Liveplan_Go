@@ -100,8 +100,10 @@ func CalcularPresupuestos(db *gorm.DB, planID uint) error {
 				}
 
 				// update/create ventas_dinero
-				ventasMensual := mensual
-				ventasAnual := anual
+				// ventas_dinero.mensual = PresupuestoVenta.mensual * indicadoresMacro.diasxmes
+				// ventas_dinero.anual = ventas_dinero.mensual * 12
+				ventasMensual := mensual * float64(diasxmes)
+				ventasAnual := ventasMensual * 12.0
 				upd := map[string]interface{}{"mensual": ventasMensual, "anual": ventasAnual}
 				res := tx.Model(&models.VentasDinero{}).
 					Where("plan_negocio_id = ? AND producto_id = ? AND anio = ?", planID, p.ProductoID, p.Anio).
