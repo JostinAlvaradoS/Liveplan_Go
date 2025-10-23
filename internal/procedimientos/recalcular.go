@@ -6,6 +6,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// (lockPlan removed) concurrency control for recalculations is handled elsewhere.
+
 // Recalcular ejecuta los procedimientos de cálculo dependientes para un plan:
 //   - CalcularDepreciaciones
 //   - CalcularPresupuestos
@@ -13,7 +15,6 @@ import (
 // Se ejecutan en paralelo y si alguno falla, se devuelve un error que concatena
 // los errores ocurridos en ambos procedimientos.
 func Recalcular(db *gorm.DB, planID uint) error {
-	print("INICIO DE RECALCULAR")
 	// Stage 1: try to run precios+costos and composicion in parallel, fallback to sequential on error
 	stage1Tasks := []func() error{
 		func() error { return CalcularPreciosYCostosPorPlan(db, planID) },
@@ -34,6 +35,5 @@ func Recalcular(db *gorm.DB, planID uint) error {
 		return fmt.Errorf("recalcular (stage2): %w", err)
 	}
 
-	print("FINAL DE RECALCULAR")
 	return nil
 }
