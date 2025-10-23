@@ -2,7 +2,6 @@ package procedimientos
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/JostinAlvaradoS/liveplan_backend_go/internal/models"
 	"gorm.io/gorm"
@@ -76,19 +75,13 @@ func CalcularPresupuestos(db *gorm.DB, planID uint) error {
 			}
 
 			// --- Update VentasDinero for the same plan/product and año ---
-			// As requested: VentasDinero.mensual = PresupuestoVenta.mensual * indicadoresMacro.diasxmes
-			// and VentasDinero.anual = VentasDinero.mensual * 12
-			var ventasMensualFloat float64
-			if mensual == 0 {
-				ventasMensualFloat = 0
-			} else {
-				ventasMensualFloat = mensual * float64(diasxmes)
-			}
-			ventasMensualInt := int(math.Round(ventasMensualFloat))
-			ventasAnualInt := ventasMensualInt * 12
+			// VentasDinero.mensual = PresupuestoVenta.mensual (already includes diasxmes)
+			// VentasDinero.anual = mensual * 12
+			ventasMensual := mensual
+			ventasAnual := mensual * 12.0
 
 			// try update existing VentasDinero row for this plan/product/anio
-			upd := map[string]interface{}{"mensual": ventasMensualInt, "anual": ventasAnualInt}
+			upd := map[string]interface{}{"mensual": ventasMensual, "anual": ventasAnual}
 			res := tx.Model(&models.VentasDinero{}).
 				Where("plan_negocio_id = ? AND producto_id = ? AND anio = ?", planID, p.ProductoID, p.Anio).
 				Updates(upd)
@@ -101,8 +94,8 @@ func CalcularPresupuestos(db *gorm.DB, planID uint) error {
 					PlanNegocioID: planID,
 					ProductoID:    p.ProductoID,
 					Anio:          p.Anio,
-					Mensual:       ventasMensualInt,
-					Anual:         ventasAnualInt,
+					Mensual:       ventasMensual,
+					Anual:         ventasAnual,
 				}
 				if err := tx.Create(&vdNew).Error; err != nil {
 					return fmt.Errorf("creating ventas_dinero for producto %d anio %d: %w", p.ProductoID, p.Anio, err)

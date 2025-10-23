@@ -205,8 +205,8 @@ type VentasDinero struct {
 	PlanNegocioID uint         `json:"plan_negocio_id" gorm:"not null;index"`
 	ProductoID    uint         `json:"producto_id" gorm:"not null;index"`
 	Anio          int          `json:"anio" gorm:"not null;index"`
-	Mensual       int          `json:"mensual" gorm:"not null;index"`
-	Anual        int          `json:"anual" gorm:"not null;index"`
+	Mensual       float64      `json:"mensual" gorm:"not null;index"`
+	Anual        float64      `json:"anual" gorm:"not null;index"`
 	PlanNegocio   *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
 	Producto      *ProductoServicio `json:"producto,omitempty" gorm:"foreignKey:ProductoID;constraint:OnDelete:CASCADE"`
 }
