@@ -29,6 +29,6 @@ services:
     depends_on:
       - db
     command: ["./liveplan_backend_go"]
-    
+
 volumes:
   db_data:

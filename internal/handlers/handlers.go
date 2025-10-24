@@ -3,6 +3,9 @@ package handlers
 import (
 	"net/http"
 
+	"os"
+	"strings"
+
 	"gorm.io/gorm"
 )
 
@@ -12,8 +15,25 @@ type App struct {
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := "http://localhost:4200,https://liveplan-frontend.web.app"
-		w.Header().Set("Access-Control-Allow-Origin", origin)
+		origin := r.Header.Get("Origin")
+		// allowed origins are read from env ALLOWED_ORIGINS (comma separated). If not set, default to localhost:4200
+		allowed := os.Getenv("ALLOWED_ORIGINS")
+		if allowed == "" {
+			allowed = "http://localhost:4200,https://liveplan-frontend.web.app"
+		}
+		// support wildcard '*' or explicit origin echo
+		ok := false
+		for _, a := range strings.Split(allowed, ",") {
+			a = strings.TrimSpace(a)
+			if a == "*" || a == origin {
+				ok = true
+				break
+			}
+		}
+		if ok {
+			// echo the origin so cookies/credentials work when allowed
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
 		w.Header().Set("Vary", "Origin")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, X-Custom-Header")
