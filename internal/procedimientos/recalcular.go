@@ -30,6 +30,7 @@ func Recalcular(db *gorm.DB, planID uint) error {
 		func() error { return CalcularDepreciaciones(db, planID) },
 		func() error { return CalcularPresupuestos(db, planID) },
 		func() error { return CalcularPrestamo(db, planID) },
+		func() error { return CalcularCostoMateriasPrimas(db, planID) },
 	}
 	if err := runAdaptive(stage2Tasks); err != nil {
 		return fmt.Errorf("recalcular (stage2): %w", err)

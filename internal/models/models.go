@@ -211,3 +211,45 @@ type VentasDinero struct {
 	Producto      *ProductoServicio `json:"producto,omitempty" gorm:"foreignKey:ProductoID;constraint:OnDelete:CASCADE"`
 }
 
+type CostosVentas struct {
+	ID            uint         `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID uint         `json:"plan_negocio_id" gorm:"not null;index"`
+	ProductoID	uint         `json:"producto_id" gorm:"not null;index"`
+	Anio 		int          `json:"anio" gorm:"not null;index"`
+	Mes 		int          `json:"mes" gorm:"not null;index"`
+	Costo 		float64      `json:"costo" gorm:"not null;index"`
+	PlanNegocio   *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+	Producto      *ProductoServicio `json:"producto,omitempty" gorm:"foreignKey:ProductoID;constraint:OnDelete:CASCADE"`
+}
+
+type CostoMateriasPrimas struct {
+	ID            uint         `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID uint         `json:"plan_negocio_id" gorm:"not null;index"`
+	ProductoID	uint         `json:"producto_id" gorm:"not null;index"`
+	Anio 		int          `json:"anio" gorm:"not null;index"`
+	CostoMensual 		float64      `json:"costo_mensual" gorm:"not null;index"`
+	CostoAnual 		float64      `json:"costo_anual" gorm:"not null;index"`
+	PlanNegocio   *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+	Producto      *ProductoServicio `json:"producto,omitempty" gorm:"foreignKey:ProductoID;constraint:OnDelete:CASCADE"`
+}
+
+type GastosOperacion struct {
+	ID            uint         `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID uint         `json:"plan_negocio_id" gorm:"not null;index"`
+	Descripcion	string       `json:"descripcion" gorm:"type:varchar(200);not null"`
+	Costo 		float64      `json:"costo" gorm:"not null;index"`
+	PlanNegocio   *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+}
+
+type EstadoResultados struct {
+	ID            uint         `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID uint         `json:"plan_negocio_id" gorm:"not null;index"`
+	Anio 		int          `json:"anio" gorm:"not null;index"`
+	Mes 		int          `json:"mes" gorm:"not null;index"`
+	UtilidadBruta 	float64      `json:"utilidad_bruta" gorm:"not null;index"`
+	UtilidadprevioIntImp float64      `json:"utilidad_previo_int_imp" gorm:"not null;index"`
+UtilidadAntesPTU 	float64      `json:"utilidad_antes_ptu" gorm:"not null;index"`
+UtilidadAntesImpuestos 	float64      `json:"utilidad_antes_impuestos" gorm:"not null;index"`
+	UtilidadNeta 	float64      `json:"utilidad_neta" gorm:"not null;index"`
+	PlanNegocio   *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+}
