@@ -55,6 +55,17 @@ func CalcularPrestamo(db *gorm.DB, planID uint) error {
 			}
 		}
 
+		// Recalcular siempre la tasa mensual a partir de la tasa anual y periodos de capitalización
+		// según: tasa_mensual = tasa_anual / periodos_capitalizacion
+		if dp.TasaAnual != 0 && dp.PeriodosCapitalizacion > 0 {
+			// mantendremos la misma unidad que usa DatosPrestamo (porcentaje), por lo que
+			// asignamos el valor en unidades de porcentaje y lo persistimos.
+			dp.TasaMensual = dp.TasaAnual / float64(dp.PeriodosCapitalizacion)
+			if err := tx.Model(&dp).Update("tasa_mensual", dp.TasaMensual).Error; err != nil {
+				return fmt.Errorf("updating tasa_mensual in datos_prestamo for plan %d: %w", planID, err)
+			}
+		}
+
 		// Determinar tasa mensual (convertir de porcentaje a decimal)
 		var r float64
 		if dp.TasaMensual != 0 {
@@ -83,9 +94,14 @@ func CalcularPrestamo(db *gorm.DB, planID uint) error {
 			return fmt.Errorf("loading prestamo_cuotas for plan %d: %w", planID, err)
 		}
 
-		// Si hay menos cuotas que n, crear las faltantes
-		if len(cuotas) < n {
-			for m := len(cuotas) + 1; m <= n; m++ {
+		// Ajuste de número de cuotas: si el conjunto actual no tiene exactamente n filas
+		// (por ejemplo, quedó muy grande por periodos de capitalización altos), eliminamos
+		// todas las filas y recreamos exactamente n entradas (periodo_mes = 1..n).
+		if len(cuotas) != n {
+			if err := tx.Where("plan_negocio_id = ?", planID).Delete(&models.PrestamoCuotas{}).Error; err != nil {
+				return fmt.Errorf("resetting prestamo_cuotas for plan %d: %w", planID, err)
+			}
+			for m := 1; m <= n; m++ {
 				anio := (m-1)/12 + 1
 				mes := (m-1)%12 + 1
 				pc := models.PrestamoCuotas{
@@ -100,10 +116,10 @@ func CalcularPrestamo(db *gorm.DB, planID uint) error {
 					SaldoPendiente: 0,
 				}
 				if err := tx.Create(&pc).Error; err != nil {
-					return fmt.Errorf("creating missing prestamo_cuotas for plan %d: %w", planID, err)
+					return fmt.Errorf("creating prestamo_cuotas for plan %d: %w", planID, err)
 				}
 			}
-			// Recargar cuotas
+			// Recargar cuotas recién creadas
 			if err := tx.Where("plan_negocio_id = ?", planID).Order("periodo_mes asc").Find(&cuotas).Error; err != nil {
 				return fmt.Errorf("reloading prestamo_cuotas for plan %d: %w", planID, err)
 			}
