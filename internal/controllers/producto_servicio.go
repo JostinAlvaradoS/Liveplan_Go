@@ -131,17 +131,32 @@ func CreateProductoServicio(db *gorm.DB, w http.ResponseWriter, r *http.Request)
 			}
 		}
 
-
-		// initialize VentasDinero for 5 years (anio 1..5) with zeros
+		// initialize Ventas for 5 years (anio 1..5) with zeros
 		for anio := 1; anio <= 5; anio++ {
-			vd := models.Ventas{
+			v := models.Ventas{
 				PlanNegocioID: item.PlanNegocioID,
 				ProductoID:    item.ID,
 				Anio:          anio,
 				Venta:         0,
 			}
-			if err := tx.Create(&vd).Error; err != nil {
+			if err := tx.Create(&v).Error; err != nil {
 				return err
+			}
+		}
+
+		// initialize CostosVentas for 5 years x 12 months with costo=0
+		for anio := 1; anio <= 5; anio++ {
+			for mes := 1; mes <= 12; mes++ {
+				cv := models.CostosVentas{
+					PlanNegocioID: item.PlanNegocioID,
+					ProductoID:    item.ID,
+					Anio:          anio,
+					Mes:           mes,
+					Costo:         0,
+				}
+				if err := tx.Create(&cv).Error; err != nil {
+					return err
+				}
 			}
 		}
 

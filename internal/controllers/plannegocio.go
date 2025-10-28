@@ -168,6 +168,21 @@ func CreatePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// Poblar GastosOperacion desde GastosOperacionBase
+		var gastosBase []models.GastosOperacionBase
+		if err := tx.Find(&gastosBase).Error; err != nil {
+			return err
+		}
+		for _, gb := range gastosBase {
+			gope := models.GastosOperacion{
+				PlanNegocioID: item.ID,
+				Descripcion:   gb.Descripcion,
+				Costo:         gb.Valor,
+			}
+			if err := tx.Create(&gope).Error; err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 

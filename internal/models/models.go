@@ -242,6 +242,11 @@ type CostoMateriasPrimas struct {
 	Producto      *ProductoServicio `json:"producto,omitempty" gorm:"foreignKey:ProductoID;constraint:OnDelete:CASCADE"`
 }
 
+type GastosOperacionBase struct {
+	ID            uint         `json:"id" gorm:"primaryKey;autoIncrement"`
+	Descripcion   string       `json:"descripcion" gorm:"type:varchar(200);not null"`
+	Valor         float64      `json:"valor" gorm:"not null;index"`
+}
 type GastosOperacion struct {
 	ID            uint         `json:"id" gorm:"primaryKey;autoIncrement"`
 	PlanNegocioID uint         `json:"plan_negocio_id" gorm:"not null;index"`
