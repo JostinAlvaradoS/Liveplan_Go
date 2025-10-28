@@ -181,8 +181,6 @@ func ListGastosOperacionByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Reque
 		"anuales":   reporteAnual,
 		"mensuales": reporteMensual,
 	})
-	w.WriteHeader(http.StatusCreated)
-	// ...existing code...
 }
 
 func UpdateGastosOperacionPatch(db *gorm.DB, w http.ResponseWriter, r *http.Request, id uint) {

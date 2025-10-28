@@ -31,7 +31,6 @@ func Connect() (*gorm.DB, error) {
 	return gdb, nil
 }
 
-// AutoMigrate models
 func Migrate(gdb *gorm.DB) error {
 	return gdb.AutoMigrate(
 		&models.PlanNegocio{},
@@ -62,5 +61,7 @@ func Migrate(gdb *gorm.DB) error {
 		&models.BalanceGeneral{},
 		&models.CostosVentas{},
 		&models.GastosOperacionBase{},
+		&models.PoliticasVenta{},
+		&models.PoliticasCompra{},
 	)
 }
