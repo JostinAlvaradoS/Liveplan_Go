@@ -50,5 +50,15 @@ func Recalcular(db *gorm.DB, planID uint) error {
 	}
 
 
+	// Stage 3: calcular depreciaciones y presupuestos en paralelo
+	// Stage 3: depreciaciones + presupuestos (also adaptive)
+	stage4Tasks := []func() error{
+		func() error { return CalcularFlujoEfectivo(db, planID) },
+		//func() error { return CalcularBalanceGeneral(db, planID) },
+	}
+	if err := runAdaptive(stage4Tasks); err != nil {
+		return fmt.Errorf("recalcular (stage4): %w", err)
+	}
+
 	return nil
 }

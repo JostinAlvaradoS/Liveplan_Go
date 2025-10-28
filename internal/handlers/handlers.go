@@ -78,6 +78,7 @@ func (a *App) Routes() http.Handler {
 	RegisterEstadoResultadosRoutes(mux, a.DB)
 	RegisterPrestamoRoutes(mux, a.DB)
 	RegisterGastosOperacionRoutes(mux, a.DB)
+	RegisterCostosVentas(mux, a.DB)
 
 	return corsMiddleware(mux)
 }

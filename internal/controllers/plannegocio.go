@@ -141,8 +141,71 @@ func CreatePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		// Create default EstadoResultados rows: 5 years x 12 months (anio 1..5, mes 1..12)
+		// Create default EstadoResultados, FlujoEfectivo, BalanceGeneral rows: 5 years x 12 months (anio 1..5, mes 0..12)
 		for anio := 1; anio <= 5; anio++ {
+			// Solo crear mes 0 en el primer año
+			if anio == 1 {
+				er := models.EstadoResultados{
+					PlanNegocioID:          item.ID,
+					Anio:                   anio,
+					Mes:                    0,
+					Ventas:                 0,
+					CostosVentas:           0,
+					UtilidadBruta:          0,
+					GastosVentaAdm:         0,
+					Depreciacion:           0,
+					Amortizacion:           0,
+					UtilidadprevioIntImp:   0,
+					GastosFinancieros:      0,
+					UtilidadAntesPTU:       0,
+					PTU:                    0,
+					UtilidadAntesImpuestos: 0,
+					ISR:                    0,
+					UtilidadNeta:           0,
+				}
+				if err := tx.Create(&er).Error; err != nil {
+					return err
+				}
+				fe := models.FlujoEfectivo{
+					PlanNegocioID:                item.ID,
+					Anio:                         anio,
+					Mes:                          0,
+					Ingresos_VentaContado:        0,
+					Ingresos_CobrosVentasCredito: 0,
+					Ingresos_OtrosIngresos:       0,
+					Ingresos_Prestamos:           0,
+					Ingresos_AportesCapital:      0,
+					Egresos_ComprasCostosContado: 0,
+					Egresos_ComprasCostosCredito: 0,
+					Egresos_GastosOperacion:      0,
+					Egresos_Intereses:            0,
+					Egresos_PagosPrestamos:       0,
+					Egresos_PagosSRI:             0,
+					Egresos_PagoPTU:              0,
+					AumentoInventarios:           0,
+					FlujoCaja:                    0,
+					EfectivoInicial:              0,
+					EfectivoFinal:                0,
+				}
+				if err := tx.Create(&fe).Error; err != nil {
+					return err
+				}
+				bg := models.BalanceGeneral{
+					PlanNegocioID:             item.ID,
+					Anio:                      anio,
+					Mes:                       0,
+					Corrientes_Efectivo:       0,
+					Corrientes_CuentasxCobrar: 0,
+					Corrientes_Inventarios:    0,
+					Corrientes_Otros:          0,
+					Corrientes_Suma:           0,
+					NoCorrientes_Suma:         0,
+				}
+				if err := tx.Create(&bg).Error; err != nil {
+					return err
+				}
+			}
+			// Meses 1..12
 			for mes := 1; mes <= 12; mes++ {
 				er := models.EstadoResultados{
 					PlanNegocioID:          item.ID,
@@ -163,6 +226,44 @@ func CreatePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 					UtilidadNeta:           0,
 				}
 				if err := tx.Create(&er).Error; err != nil {
+					return err
+				}
+				fe := models.FlujoEfectivo{
+					PlanNegocioID:                item.ID,
+					Anio:                         anio,
+					Mes:                          mes,
+					Ingresos_VentaContado:        0,
+					Ingresos_CobrosVentasCredito: 0,
+					Ingresos_OtrosIngresos:       0,
+					Ingresos_Prestamos:           0,
+					Ingresos_AportesCapital:      0,
+					Egresos_ComprasCostosContado: 0,
+					Egresos_ComprasCostosCredito: 0,
+					Egresos_GastosOperacion:      0,
+					Egresos_Intereses:            0,
+					Egresos_PagosPrestamos:       0,
+					Egresos_PagosSRI:             0,
+					Egresos_PagoPTU:              0,
+					AumentoInventarios:           0,
+					FlujoCaja:                    0,
+					EfectivoInicial:              0,
+					EfectivoFinal:                0,
+				}
+				if err := tx.Create(&fe).Error; err != nil {
+					return err
+				}
+				bg := models.BalanceGeneral{
+					PlanNegocioID:             item.ID,
+					Anio:                      anio,
+					Mes:                       mes,
+					Corrientes_Efectivo:       0,
+					Corrientes_CuentasxCobrar: 0,
+					Corrientes_Inventarios:    0,
+					Corrientes_Otros:          0,
+					Corrientes_Suma:           0,
+					NoCorrientes_Suma:         0,
+				}
+				if err := tx.Create(&bg).Error; err != nil {
 					return err
 				}
 			}

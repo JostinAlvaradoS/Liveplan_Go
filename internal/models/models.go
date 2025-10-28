@@ -263,6 +263,7 @@ type PoliticasVenta 		struct {
 	Mes 		int          `json:"mes" gorm:"not null;index"`
 	PorcentajeCredito float64      `json:"porcentaje_credito" gorm:"not null;index"`
 	PorcentajeContado float64      `json:"porcentaje_contado" gorm:"not null;index"`
+	PlanNegocio  *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
 }
 
 type PoliticasCompra		struct {
@@ -272,6 +273,8 @@ type PoliticasCompra		struct {
 	Mes 		int          `json:"mes" gorm:"not null;index"`
 	PorcentajeCredito float64      `json:"porcentaje_credito" gorm:"not null;index"`
 	PorcentajeContado float64      `json:"porcentaje_contado" gorm:"not null;index"`
+	PlanNegocio  *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+
 }
 
 type EstadoResultados struct {
@@ -308,6 +311,7 @@ type FlujoEfectivo struct {
 	Ingresos_AportesCapital      float64 `json:"ingresos_aportes_capital" gorm:"not null;index"`
 	Egresos_ComprasCostosContado float64 `json:"egresos_compras_costos_contado" gorm:"not null;index"`
 	Egresos_ComprasCostosCredito float64 `json:"egresos_compras_costos_credito" gorm:"not null;index"`
+	Egresos_GastosOperacion      float64 `json:"egresos_gastos_operacion" gorm:"not null;index"`
 	Egresos_Intereses            float64 `json:"egresos_intereses" gorm:"not null;index"`
 	Egresos_PagosPrestamos        float64 `json:"egresos_pagos_prestamos" gorm:"not null;index"`
 	Egresos_PagosSRI			float64 `json:"egresos_pagos_sri" gorm:"not null;index"`
