@@ -177,7 +177,8 @@ func CreatePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 			gope := models.GastosOperacion{
 				PlanNegocioID: item.ID,
 				Descripcion:   gb.Descripcion,
-				Costo:         gb.Valor,
+				Mensual:         gb.Valor,
+				Anual: gb.Valor * 12,
 			}
 			if err := tx.Create(&gope).Error; err != nil {
 				return err

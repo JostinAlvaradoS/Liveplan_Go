@@ -251,7 +251,8 @@ type GastosOperacion struct {
 	ID            uint         `json:"id" gorm:"primaryKey;autoIncrement"`
 	PlanNegocioID uint         `json:"plan_negocio_id" gorm:"not null;index"`
 	Descripcion   string       `json:"descripcion" gorm:"type:varchar(200);not null"`
-	Costo         float64      `json:"costo" gorm:"not null;index"`
+	Mensual      float64      `json:"mensual" gorm:"not null;index"`
+	Anual        float64      `json:"anual" gorm:"not null;index"`
 	PlanNegocio   *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
 }
 

@@ -85,7 +85,7 @@ func CalcularEstadoResultados(db *gorm.DB, planID uint) error {
 		}
 		totalGastos := 0.0
 		for _, gope := range gastosOperacion {
-			totalGastos += gope.Costo
+			totalGastos += gope.Mensual
 		}
 		for mes := 1; mes <= 12; mes++ {
 			gastosVentaAdmPorAnioMes[anio][mes] = totalGastos

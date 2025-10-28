@@ -12,8 +12,6 @@ func RegisterGastosOperacionRoutes(mux *http.ServeMux, db *gorm.DB) {
 		switch r.Method {
 		case http.MethodGet:
 			controllers.ListGastosOperacion(db, w, r)
-		case http.MethodPost:
-			controllers.CreateGastosOperacion(db, w, r)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
