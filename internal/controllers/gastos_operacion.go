@@ -19,13 +19,115 @@ func ListGastosOperacion(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 }
 
 func ListGastosOperacionByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Request, planID uint) {
-	var items []models.GastosOperacion
-	if err := db.Where("plan_negocio_id = ?", planID).Find(&items).Error; err != nil {
+	// Obtener gastos operacion base
+	var gastos []models.GastosOperacion
+	if err := db.Where("plan_negocio_id = ?", planID).Find(&gastos).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Obtener cuotas de préstamo
+	var cuotas []models.PrestamoCuotas
+	if err := db.Where("plan_negocio_id = ?", planID).Find(&cuotas).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Obtener depreciaciones
+	var depreciaciones []models.Depreciacion
+	if err := db.Where("plan_negocio_id = ?", planID).Preload("DetalleInversion").Find(&depreciaciones).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Armar respuesta por año y mes
+	type MesResult struct {
+		Anio         int                      `json:"anio"`
+		Mes          int                      `json:"mes"`
+		Gastos       []models.GastosOperacion `json:"gastos_operacion"`
+		Subtotal     float64                  `json:"subtotal"`
+		Intereses    float64                  `json:"intereses_prestamo"`
+		Depreciacion float64                  `json:"depreciacion"`
+		Amortizacion float64                  `json:"amortizacion"`
+		Total        float64                  `json:"total"`
+	}
+
+	// GastosOperacion no tiene mes/anio, se asigna igual a todos los meses
+	gastosTotal := 0.0
+	for _, gope := range gastos {
+		gastosTotal += gope.Costo
+	}
+
+	// Mapas para sumar por año/mes
+	interesesPorAnioMes := make(map[int]map[int]float64)
+	for _, c := range cuotas {
+		if _, ok := interesesPorAnioMes[c.Anio]; !ok {
+			interesesPorAnioMes[c.Anio] = make(map[int]float64)
+		}
+		interesesPorAnioMes[c.Anio][c.Mes] += c.Interes
+	}
+
+	depreciacionPorAnioMes := make(map[int]map[int]float64)
+	amortizacionPorAnioMes := make(map[int]map[int]float64)
+	for _, dep := range depreciaciones {
+		tipo := 0
+		if dep.DetalleInversion != nil {
+			tipo = int(dep.DetalleInversion.TipoID)
+		}
+		val := 0.0
+		if dep.DepreciacionMensual != nil {
+			val = *dep.DepreciacionMensual
+		}
+		anios := []int{1, 2, 3, 4, 5}
+		for _, anio := range anios {
+			if _, ok := depreciacionPorAnioMes[anio]; !ok {
+				depreciacionPorAnioMes[anio] = make(map[int]float64)
+			}
+			if _, ok := amortizacionPorAnioMes[anio]; !ok {
+				amortizacionPorAnioMes[anio] = make(map[int]float64)
+			}
+			for mes := 1; mes <= 12; mes++ {
+				if tipo == 1 {
+					depreciacionPorAnioMes[anio][mes] += val
+				} else if tipo == 2 {
+					amortizacionPorAnioMes[anio][mes] += val
+				}
+			}
+		}
+	}
+
+	var result []MesResult
+	for anio := 1; anio <= 5; anio++ {
+		for mes := 1; mes <= 12; mes++ {
+			subtotal := gastosTotal
+			intereses := 0.0
+			if m, ok := interesesPorAnioMes[anio]; ok {
+				intereses = m[mes]
+			}
+			depreciacion := 0.0
+			if m, ok := depreciacionPorAnioMes[anio]; ok {
+				depreciacion = m[mes]
+			}
+			amortizacion := 0.0
+			if m, ok := amortizacionPorAnioMes[anio]; ok {
+				amortizacion = m[mes]
+			}
+			total := subtotal + intereses + depreciacion + amortizacion
+			result = append(result, MesResult{
+				Anio:         anio,
+				Mes:          mes,
+				Gastos:       gastos, // todos los gastos operacion
+				Subtotal:     subtotal,
+				Intereses:    intereses,
+				Depreciacion: depreciacion,
+				Amortizacion: amortizacion,
+				Total:        total,
+			})
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(items)
+	json.NewEncoder(w).Encode(result)
 }
 
 func GetGastosOperacion(db *gorm.DB, w http.ResponseWriter, r *http.Request, id uint) {
