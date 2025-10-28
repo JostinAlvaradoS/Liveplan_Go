@@ -259,6 +259,8 @@ type GastosOperacion struct {
 type PoliticasVenta 		struct {
 	ID            uint         `json:"id" gorm:"primaryKey;autoIncrement"`
 	PlanNegocioID uint         `json:"plan_negocio_id" gorm:"not null;index"`
+	Anio 		int          `json:"anio" gorm:"not null;index"`
+	Mes 		int          `json:"mes" gorm:"not null;index"`
 	PorcentajeCredito float64      `json:"porcentaje_credito" gorm:"not null;index"`
 	PorcentajeContado float64      `json:"porcentaje_contado" gorm:"not null;index"`
 }
@@ -266,6 +268,8 @@ type PoliticasVenta 		struct {
 type PoliticasCompra		struct {
 	ID            uint         `json:"id" gorm:"primaryKey;autoIncrement"`
 	PlanNegocioID uint         `json:"plan_negocio_id" gorm:"not null;index"`
+	Anio 		int          `json:"anio" gorm:"not null;index"`
+	Mes 		int          `json:"mes" gorm:"not null;index"`
 	PorcentajeCredito float64      `json:"porcentaje_credito" gorm:"not null;index"`
 	PorcentajeContado float64      `json:"porcentaje_contado" gorm:"not null;index"`
 }

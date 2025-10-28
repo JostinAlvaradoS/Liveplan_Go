@@ -177,11 +177,37 @@ func CreatePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 			gope := models.GastosOperacion{
 				PlanNegocioID: item.ID,
 				Descripcion:   gb.Descripcion,
-				Mensual:         gb.Valor,
-				Anual: gb.Valor * 12,
+				Mensual:       gb.Valor,
+				Anual:         gb.Valor * 12,
 			}
 			if err := tx.Create(&gope).Error; err != nil {
 				return err
+			}
+		}
+
+		// Crear PoliticasVenta y PoliticasCompra por defecto (80-20) para todos los meses de los 5 años
+		for anio := 1; anio <= 5; anio++ {
+			for mes := 1; mes <= 12; mes++ {
+				pv := models.PoliticasVenta{
+					PlanNegocioID:     item.ID,
+					Anio:              anio,
+					Mes:               mes,
+					PorcentajeCredito: 20,
+					PorcentajeContado: 80,
+				}
+				if err := tx.Create(&pv).Error; err != nil {
+					return err
+				}
+				pc := models.PoliticasCompra{
+					PlanNegocioID:     item.ID,
+					Anio:              anio,
+					Mes:               mes,
+					PorcentajeCredito: 20,
+					PorcentajeContado: 80,
+				}
+				if err := tx.Create(&pc).Error; err != nil {
+					return err
+				}
 			}
 		}
 		return nil
