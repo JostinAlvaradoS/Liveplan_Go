@@ -109,13 +109,13 @@ func CreatePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 
 		// Create default DatosPrestamo and PrestamoCuotas for 5 years (60 meses)
 		dp := models.DatosPrestamo{
-			PlanNegocioID: item.ID,
-			Monto:         0,
-			TasaAnual:    12,
+			PlanNegocioID:          item.ID,
+			Monto:                  0,
+			TasaAnual:              12,
 			PeriodosCapitalizacion: 12,
-			TasaMensual:   1,
-			PeriodosAmortizacion: 60,
-			Cuota:        0,
+			TasaMensual:            1,
+			PeriodosAmortizacion:   60,
+			Cuota:                  0,
 		}
 		if err := tx.Create(&dp).Error; err != nil {
 			return err
@@ -138,6 +138,26 @@ func CreatePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 			}
 			if err := tx.Create(&pc).Error; err != nil {
 				return err
+			}
+		}
+
+		// Create default EstadoResultados rows: 5 years x 12 months (anio 1..5, mes 1..12)
+		for anio := 1; anio <= 5; anio++ {
+			for mes := 1; mes <= 12; mes++ {
+				er := models.EstadoResultados{
+					PlanNegocioID:          item.ID,
+					Anio:                   anio,
+					Mes:                    mes,
+					UtilidadBruta:          0,
+					UtilidadprevioIntImp:   0,
+					UtilidadAntesPTU:       0,
+					UtilidadAntesImpuestos: 0,
+					UtilidadNeta:           0,
+					
+				}
+				if err := tx.Create(&er).Error; err != nil {
+					return err
+				}
 			}
 		}
 
