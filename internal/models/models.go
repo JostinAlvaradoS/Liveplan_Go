@@ -211,6 +211,15 @@ type VentasDinero struct {
 	Producto      *ProductoServicio `json:"producto,omitempty" gorm:"foreignKey:ProductoID;constraint:OnDelete:CASCADE"`
 }
 
+type Ventas struct {
+	ID            uint              `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID uint              `json:"plan_negocio_id" gorm:"not null;index"`
+	ProductoID    uint              `json:"producto_id" gorm:"not null;index"`
+	Anio          int               `json:"anio" gorm:"not null;index"`
+	Venta         float64           `json:"venta" gorm:"not null;index"`
+	PlanNegocio   *PlanNegocio      `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+	Producto      *ProductoServicio `json:"producto,omitempty" gorm:"foreignKey:ProductoID;constraint:OnDelete:CASCADE"`
+}
 type CostosVentas struct {
 	ID            uint              `json:"id" gorm:"primaryKey;autoIncrement"`
 	PlanNegocioID uint              `json:"plan_negocio_id" gorm:"not null;index"`
@@ -249,7 +258,6 @@ type EstadoResultados struct {
 	Ventas                 float64      `json:"ventas" gorm:"not null;index"`
 	CostosVentas           float64      `json:"costos_ventas" gorm:"not null;index"`
 	UtilidadBruta          float64      `json:"utilidad_bruta" gorm:"not null;index"`
-	GastosOperacion        float64      `json:"gastos_operacion" gorm:"not null;index"`
 	GastosVentaAdm         float64      `json:"gastos_venta_adm" gorm:"not null;index"`
 	Depreciacion           float64      `json:"depreciacion" gorm:"not null;index"`
 	Amortizacion           float64      `json:"amortizacion" gorm:"not null;index"`

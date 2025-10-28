@@ -148,12 +148,19 @@ func CreatePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 					PlanNegocioID:          item.ID,
 					Anio:                   anio,
 					Mes:                    mes,
+					Ventas:                 0,
+					CostosVentas:           0,
 					UtilidadBruta:          0,
+					GastosVentaAdm:         0,
+					Depreciacion:           0,
+					Amortizacion:           0,
 					UtilidadprevioIntImp:   0,
+					GastosFinancieros:      0,
 					UtilidadAntesPTU:       0,
+					PTU:                    0,
 					UtilidadAntesImpuestos: 0,
+					ISR:                    0,
 					UtilidadNeta:           0,
-					
 				}
 				if err := tx.Create(&er).Error; err != nil {
 					return err
