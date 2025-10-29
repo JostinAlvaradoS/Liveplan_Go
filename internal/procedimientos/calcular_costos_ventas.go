@@ -54,7 +54,7 @@ func CalcularCostosVentas(db *gorm.DB, planID uint) error {
             var cv models.CostosVentas
             q := db.Where("plan_negocio_id = ? AND producto_id = ? AND anio = ? AND mes = ?", planID, vd.ProductoID, vd.Anio, mes).First(&cv)
             if q.Error == nil {
-                cv.Costo = costoMensual
+                cv.Mensual = costoMensual
                 if err := db.Save(&cv).Error; err != nil {
                     log.Printf("CalcularCostosVentas: error actualizando costo ventas P:%d Prod:%d A:%d M:%d: %v", planID, vd.ProductoID, vd.Anio, mes, err)
                     return fmt.Errorf("actualizar costos_ventas: %w", err)
@@ -65,7 +65,8 @@ func CalcularCostosVentas(db *gorm.DB, planID uint) error {
                     ProductoID:    vd.ProductoID,
                     Anio:          vd.Anio,
                     Mes:           mes,
-                    Costo:         costoMensual,
+                    Mensual:      costoMensual,
+					Anual: costoMensual * 12,
                 }
                 if err := db.Create(&newCv).Error; err != nil {
                     log.Printf("CalcularCostosVentas: error creando costo ventas P:%d Prod:%d A:%d M:%d: %v", planID, vd.ProductoID, vd.Anio, mes, err)

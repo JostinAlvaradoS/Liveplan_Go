@@ -152,7 +152,8 @@ func CreateProductoServicio(db *gorm.DB, w http.ResponseWriter, r *http.Request)
 					ProductoID:    item.ID,
 					Anio:          anio,
 					Mes:           mes,
-					Costo:         0,
+					Mensual:      0,
+					Anual:        0,
 				}
 				if err := tx.Create(&cv).Error; err != nil {
 					return err

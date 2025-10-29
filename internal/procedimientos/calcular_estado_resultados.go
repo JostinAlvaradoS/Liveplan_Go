@@ -37,7 +37,7 @@ func CalcularEstadoResultados(db *gorm.DB, planID uint) error {
 		if _, ok := costosPorAnioMes[cv.Anio]; !ok {
 			costosPorAnioMes[cv.Anio] = make(map[int]float64)
 		}
-		costosPorAnioMes[cv.Anio][cv.Mes] += cv.Costo
+		costosPorAnioMes[cv.Anio][cv.Mes] += cv.Mensual
 	}
 	// Determinar los años a procesar. Preferir los años ya creados en EstadoResultados
 	yearsSet := make(map[int]struct{})
