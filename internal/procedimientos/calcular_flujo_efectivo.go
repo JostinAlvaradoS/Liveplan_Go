@@ -78,6 +78,16 @@ func CalcularFlujoEfectivo(db *gorm.DB, planID uint) error {
 		totalGastosOperacion += gope.Mensual
 	}
 
+	// Obtener efectivo inicial desde DetalleInversionInicial (Elemento == "Efectivo" y TipoID == 3)
+	var detallesInversion []models.DetalleInversionInicial
+	if err := db.Where("plan_negocio_id = ? AND tipo_id = ? AND elemento = ?", planID, 3, "Efectivo").Find(&detallesInversion).Error; err != nil {
+		return err
+	}
+	efectivoInicialTotal := 0.0
+	for _, d := range detallesInversion {
+		efectivoInicialTotal += d.Importe
+	}
+
 	for _, er := range ers {
 		anio := er.Anio
 		mes := er.Mes
@@ -207,6 +217,11 @@ func CalcularFlujoEfectivo(db *gorm.DB, planID uint) error {
 		// Llenar totales de Ingresos y Egresos sumando los campos correspondientes
 		flujo.Ingresos = flujo.Ingresos_VentaContado + flujo.Ingresos_CobrosVentasCredito + flujo.Ingresos_OtrosIngresos + flujo.Ingresos_Prestamos + flujo.Ingresos_AportesCapital
 		flujo.Egresos = flujo.Egresos_ComprasCostosContado + flujo.Egresos_ComprasCostosCredito + flujo.Egresos_GastosOperacion + flujo.Egresos_Intereses + flujo.Egresos_PagosPrestamos + flujo.Egresos_PagosSRI + flujo.Egresos_PagoPTU
+
+		// Calcular flujo de caja y efectivo inicial/final
+		flujo.FlujoCaja = flujo.Ingresos - flujo.Egresos
+		flujo.EfectivoInicial = efectivoInicialTotal
+		flujo.EfectivoFinal = flujo.FlujoCaja + flujo.EfectivoInicial
 		if err := db.Save(&flujo).Error; err != nil {
 			return err
 		}
