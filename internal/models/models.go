@@ -310,6 +310,7 @@ type FlujoEfectivo struct {
 	Ingresos_OtrosIngresos       float64 `json:"ingresos_otros_ingresos" gorm:"not null;index"`
 	Ingresos_Prestamos           float64 `json:"ingresos_prestamos" gorm:"not null;index"`
 	Ingresos_AportesCapital      float64 `json:"ingresos_aportes_capital" gorm:"not null;index"`
+	Ingresos   				 float64 `json:"ingresos" gorm:"not null;index"`
 	Egresos_ComprasCostosContado float64 `json:"egresos_compras_costos_contado" gorm:"not null;index"`
 	Egresos_ComprasCostosCredito float64 `json:"egresos_compras_costos_credito" gorm:"not null;index"`
 	Egresos_GastosOperacion      float64 `json:"egresos_gastos_operacion" gorm:"not null;index"`
@@ -317,6 +318,7 @@ type FlujoEfectivo struct {
 	Egresos_PagosPrestamos        float64 `json:"egresos_pagos_prestamos" gorm:"not null;index"`
 	Egresos_PagosSRI			float64 `json:"egresos_pagos_sri" gorm:"not null;index"`
 	Egresos_PagoPTU			float64 `json:"egresos_pago_ptu" gorm:"not null;index"`
+	Egresos    				 float64 `json:"egresos" gorm:"not null;index"`
 	AumentoInventarios           float64 `json:"aumento_inventarios" gorm:"not null;index"`
 	FlujoCaja                    float64 `json:"flujo_caja" gorm:"not null;index"`
 	EfectivoInicial             float64 `json:"efectivo_inicial" gorm:"not null;index"`
