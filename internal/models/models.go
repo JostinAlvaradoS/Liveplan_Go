@@ -331,12 +331,41 @@ type BalanceGeneral struct {
 	PlanNegocioID      uint         `json:"plan_negocio_id" gorm:"not null;index"`
 	Anio               int          `json:"anio" gorm:"not null;index"`
 	Mes                int          `json:"mes" gorm:"not null;index"`
+
 	Corrientes_Efectivo    float64      `json:"corrientes_efectivo" gorm:"not null;index"`
 	Corrientes_CuentasxCobrar float64      `json:"corrientes_cuentasx_cobrar" gorm:"not null;index"`
 	Corrientes_Inventarios    float64      `json:"corrientes_inventarios" gorm:"not null;index"`
 	Corrientes_Otros         float64      `json:"corrientes_otros_activos" gorm:"not null;index"`
 	Corrientes_Suma		  float64      `json:"corrientes_suma" gorm:"not null;index"`
 	NoCorrientes_Suma	   float64      `json:"no_corrientes_suma" gorm:"not null;index"`
-	
 	PlanNegocio              *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+}
+
+
+type ConceptosEvaluacion struct {
+	ID          uint   `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID uint   `json:"plan_negocio_id" gorm:"not null;index"`
+	Anio 		 int    `json:"anio" gorm:"not null;index"`
+	FlujoEfectivoNominal   string `json:"flujo_efectivo_nominal" gorm:"type:varchar(100);not null"`
+	ValorRescate   string `json:"valor_rescate" gorm:"type:varchar(100);not null"`
+	TotalFlujoEfectivo   string `json:"total_flujo_efectivo" gorm:"type:varchar(100);not null"`
+	ValorActualFlujosFuturos   string `json:"valor_actual_flujos_futuros" gorm:"type:varchar(100);not null"`
+	PlanNegocio       *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+}
+type EvaluacionProyecto struct {
+	ID                 uint         `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID      uint         `json:"plan_negocio_id" gorm:"not null;index"`
+	VAN                float64      `json:"van" gorm:"not null;index"`
+	TIR                float64      `json:"tir" gorm:"not null;index"`
+	TREMA              float64      `json:"trema" gorm:"not null;index"`
+	PlanNegocio       *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
+}
+
+type AnalisisSensibilidad struct {
+	ID                 uint         `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID      uint         `json:"plan_negocio_id" gorm:"not null;index"`
+	Volumen 		float64      `json:"volumen" gorm:"not null;index"`
+	Costo 		float64      `json:"costo" gorm:"not null;index"`
+	Valor 		float64      `json:"valor" gorm:"not null;index"`
+	PlanNegocio       *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
 }

@@ -288,6 +288,50 @@ func CreatePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// Create default EvaluacionProyecto
+		ep := models.EvaluacionProyecto{
+			PlanNegocioID: item.ID,
+			VAN:           0,
+			TIR:           0,
+			TREMA:         0,
+		}
+		if err := tx.Create(&ep).Error; err != nil {
+			return err
+		}
+
+		// Create default ConceptosEvaluacion for years 0-5
+		for anio := 0; anio <= 5; anio++ {
+			ce := models.ConceptosEvaluacion{
+				PlanNegocioID:            item.ID,
+				Anio:                     anio,
+				FlujoEfectivoNominal:     "0.00",
+				ValorRescate:             "0.00",
+				TotalFlujoEfectivo:       "0.00",
+				ValorActualFlujosFuturos: "0.00",
+			}
+			if err := tx.Create(&ce).Error; err != nil {
+				return err
+			}
+		}
+
+		// Create default AnalisisSensibilidad matrix (volumen x costo)
+		volumenes := []float64{-15, -10, -5, 0, 5, 10, 15}
+		costos := []float64{-15, -10, -5, 0, 5, 10, 15}
+
+		for _, volumen := range volumenes {
+			for _, costo := range costos {
+				as := models.AnalisisSensibilidad{
+					PlanNegocioID: item.ID,
+					Volumen:       volumen,
+					Costo:         costo,
+					Valor:         0, // Default value, will be calculated later
+				}
+				if err := tx.Create(&as).Error; err != nil {
+					return err
+				}
+			}
+		}
+
 		// Crear PoliticasVenta y PoliticasCompra por defecto (80-20) para todos los meses de los 5 años
 		for anio := 1; anio <= 5; anio++ {
 			for mes := 1; mes <= 12; mes++ {
