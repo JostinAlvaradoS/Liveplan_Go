@@ -335,9 +335,29 @@ type BalanceGeneral struct {
 	Corrientes_Efectivo    float64      `json:"corrientes_efectivo" gorm:"not null;index"`
 	Corrientes_CuentasxCobrar float64      `json:"corrientes_cuentasx_cobrar" gorm:"not null;index"`
 	Corrientes_Inventarios    float64      `json:"corrientes_inventarios" gorm:"not null;index"`
-	Corrientes_Otros         float64      `json:"corrientes_otros_activos" gorm:"not null;index"`
+	Corrientes_Otros         float64      `json:"corrientes_otros" gorm:"not null;index"`
 	Corrientes_Suma		  float64      `json:"corrientes_suma" gorm:"not null;index"`
 	NoCorrientes_Suma	   float64      `json:"no_corrientes_suma" gorm:"not null;index"`
+	TotalActivo 		  float64      `json:"total_activo" gorm:"not null;index"`
+
+	PasivoCortoPlazo    float64      `json:"pasivo_corto_plazo" gorm:"not null;index"`
+	PasivoProveedoresCortoPlazo    float64      `json:"pasivo_proveedores_corto_plazo" gorm:"not null;index"`
+	PasivoPrestamosCortoPlazo   float64      `json:"pasivo_prestamos_corto_plazo" gorm:"not null;index"`
+	PasivoCuentasxPagarCortoPlazo   float64      `json:"pasivo_cuentasx_pagar_corto_plazo" gorm:"not null;index"`
+	PasivoOtrosCortoPlazo   float64      `json:"pasivo_otros_corto_plazo" gorm:"not null;index"`
+	PasivoCortoPlazo_Suma   float64      `json:"pasivo_corto_plazo_suma" gorm:"not null;index"`
+
+	PasivoPrestamosLargoPlazo   float64      `json:"pasivo_prestamos_largo_plazo" gorm:"not null;index"`
+	PasivoOtrosLargoPlazo   float64      `json:"pasivo_otros_largo_plazo" gorm:"not null;index"`
+	PasivoLargoPlazo_Suma   float64      `json:"pasivo_largo_plazo_suma" gorm:"not null;index"`
+
+	TotalPasivo  		  float64      `json:"total_pasivo" gorm:"not null;index"`
+
+	CapitalSocial    float64      `json:"capital_social" gorm:"not null;index"`
+	CapitalAdicional    float64      `json:"capital_adicional" gorm:"not null;index"`
+	UtilidadesRetenidas    float64      `json:"utilidades_retenidas" gorm:"not null;index"`
+	UtilidadDelEjercicio    float64      `json:"utilidad_del_ejercicio" gorm:"not null;index"`
+	TotalCapitalContable   float64      `json:"total_capital_contable" gorm:"not null;index"`
 	PlanNegocio              *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
 }
 
