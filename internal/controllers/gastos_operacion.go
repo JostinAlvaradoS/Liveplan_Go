@@ -43,6 +43,9 @@ func ListGastosOperacionByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Reque
 	// Mapas para sumar por año
 	var interesesPorAnio map[int]float64
 	interesesPorAnio = make(map[int]float64)
+	// Declarar mapas para depreciaciones y amortizaciones mensuales
+	var depreciacionPorMes map[int]map[int]float64 = make(map[int]map[int]float64)
+	var amortizacionPorMes map[int]map[int]float64 = make(map[int]map[int]float64)
 	for _, c := range cuotas {
 		interesesPorAnio[c.Anio] += c.Interes
 	}
@@ -51,6 +54,8 @@ func ListGastosOperacionByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Reque
 	var amortizacionPorAnio map[int]float64
 	depreciacionPorAnio = make(map[int]float64)
 	amortizacionPorAnio = make(map[int]float64)
+	depreciacionPorMes = make(map[int]map[int]float64)
+	amortizacionPorMes = make(map[int]map[int]float64)
 	for _, dep := range depreciaciones {
 		tipo := 0
 		if dep.DetalleInversion != nil {
@@ -61,11 +66,26 @@ func ListGastosOperacionByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Reque
 			val = *dep.DepreciacionMensual
 		}
 		for anio := 1; anio <= 5; anio++ {
-			if tipo == 1 {
-				depreciacionPorAnio[anio] += val * 12
-			} else if tipo == 2 {
-				amortizacionPorAnio[anio] += val * 12
+			for mes := 1; mes <= 12; mes++ {
+				if tipo == 1 {
+					if _, ok := depreciacionPorMes[anio]; !ok {
+						depreciacionPorMes[anio] = make(map[int]float64)
+					}
+					depreciacionPorMes[anio][mes] += val
+				} else if tipo == 2 {
+					if _, ok := amortizacionPorMes[anio]; !ok {
+						amortizacionPorMes[anio] = make(map[int]float64)
+					}
+					amortizacionPorMes[anio][mes] += val
+				}
 			}
+		}
+	}
+	// Sumar las mensuales para obtener el anual
+	for anio := 1; anio <= 5; anio++ {
+		for mes := 1; mes <= 12; mes++ {
+			depreciacionPorAnio[anio] += depreciacionPorMes[anio][mes]
+			amortizacionPorAnio[anio] += amortizacionPorMes[anio][mes]
 		}
 	}
 
@@ -82,8 +102,6 @@ func ListGastosOperacionByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Reque
 
 	depreciacionPorAnio = make(map[int]float64)
 	amortizacionPorAnio = make(map[int]float64)
-	depreciacionPorMes := make(map[int]map[int]float64)
-	amortizacionPorMes := make(map[int]map[int]float64)
 	for _, dep := range depreciaciones {
 		tipo := 0
 		if dep.DetalleInversion != nil {
@@ -111,11 +129,7 @@ func ListGastosOperacionByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Reque
 			}
 		}
 	}
-	// Multiplicar por 12 para anual
-	for anio := 1; anio <= 5; anio++ {
-		depreciacionPorAnio[anio] *= 12
-		amortizacionPorAnio[anio] *= 12
-	}
+	// ...eliminado: ya no se multiplica por 12, el anual es la suma de las mensuales...
 
 	// Sumar gastos operacion anual y mensual por año
 	gastosOperacionPorAnio := make(map[int]float64)
@@ -180,6 +194,7 @@ func ListGastosOperacionByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"anuales":   reporteAnual,
 		"mensuales": reporteMensual,
+		"gastos":    gastos,
 	})
 }
 
