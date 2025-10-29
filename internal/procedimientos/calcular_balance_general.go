@@ -203,15 +203,208 @@ func calcularBalanceMes(db *gorm.DB, planID uint, anio, mes int, supuesto models
 	// 7. Calcular TotalActivo
 	totalActivo := corrientesSuma + noCorrientesSuma
 
+	// 8. Calcular PasivoProveedoresCortoPlazo
+	var pasivoProveedores float64
+	if anio == 1 && mes == 0 {
+		pasivoProveedores = 0 // Inicializa en 0 para mes 0 año 1
+	} else {
+		// Obtener pasivo proveedores del mes anterior
+		var balanceAnterior models.BalanceGeneral
+		mesAnterior := mes - 1
+		anioAnterior := anio
+		if mes == 1 {
+			if anio == 1 {
+				// Si es mes 1 del año 1, tomar mes 0 del año 1
+				mesAnterior = 0
+				anioAnterior = 1
+			} else {
+				// Si es mes 1 de años 2-5, tomar mes 12 del año anterior
+				mesAnterior = 12
+				anioAnterior = anio - 1
+			}
+		}
+
+		err := db.Where("plan_negocio_id = ? AND anio = ? AND mes = ?", planID, anioAnterior, mesAnterior).
+			First(&balanceAnterior).Error
+		if err == nil {
+			pasivoProveedores = balanceAnterior.PasivoProveedoresCortoPlazo
+		}
+
+		// Sumar costos de materia prima del mes actual * porcentaje a crédito
+		var costosMateriasPrimas []models.CostoMateriasPrimas
+		err = db.Where("plan_negocio_id = ? AND anio = ?", planID, anio).Find(&costosMateriasPrimas).Error
+		if err == nil {
+			// Obtener política de compra del mes actual
+			var politicaCompra models.PoliticasCompra
+			err = db.Where("plan_negocio_id = ? AND anio = ? AND mes = ?", planID, anio, mes).
+				First(&politicaCompra).Error
+			if err == nil {
+				for _, costo := range costosMateriasPrimas {
+					costosCredito := costo.CostoMensual * (politicaCompra.PorcentajeCredito / 100.0)
+					pasivoProveedores += costosCredito
+				}
+			}
+		}
+
+		// Restar pagos de compras a crédito del flujo de efectivo
+		var flujoEfectivo models.FlujoEfectivo
+		err = db.Where("plan_negocio_id = ? AND anio = ? AND mes = ?", planID, anio, mes).
+			First(&flujoEfectivo).Error
+		if err == nil {
+			pasivoProveedores -= flujoEfectivo.Egresos_ComprasCostosCredito
+		}
+	}
+
+	// 9. Calcular PasivoPrestamosCortoPlazo
+	var pasivoPrestamos float64
+	if anio == 1 && mes == 0 {
+		// Mes 0: suma de todas las amortizaciones del primer año (mes 1-12 del año 1)
+		var prestamoCuotas []models.PrestamoCuotas
+		err := db.Where("plan_negocio_id = ? AND anio = 1", planID).Find(&prestamoCuotas).Error
+		if err == nil {
+			for _, cuota := range prestamoCuotas {
+				pasivoPrestamos += cuota.Amortizacion
+			}
+		}
+	} else {
+		// Mes 1 en adelante: PasivoPrestamosCortoPlazo(mes anterior) - amortización del mes actual
+		var balanceAnterior models.BalanceGeneral
+		mesAnterior := mes - 1
+		anioAnterior := anio
+		if mes == 1 {
+			if anio == 1 {
+				// Si es mes 1 del año 1, tomar mes 0 del año 1
+				mesAnterior = 0
+				anioAnterior = 1
+			} else {
+				// Si es mes 1 de años 2-5, tomar mes 12 del año anterior
+				mesAnterior = 12
+				anioAnterior = anio - 1
+			}
+		}
+
+		err := db.Where("plan_negocio_id = ? AND anio = ? AND mes = ?", planID, anioAnterior, mesAnterior).
+			First(&balanceAnterior).Error
+		if err == nil {
+			pasivoPrestamos = balanceAnterior.PasivoPrestamosCortoPlazo
+		}
+
+		// Restar amortización del mes actual
+		var prestamoCuota models.PrestamoCuotas
+		err = db.Where("plan_negocio_id = ? AND anio = ? AND mes = ?", planID, anio, mes).
+			First(&prestamoCuota).Error
+		if err == nil {
+			pasivoPrestamos -= prestamoCuota.Amortizacion
+		}
+	}
+
+	// 10. Calcular PasivoCuentasxPagarCortoPlazo
+	var pasivoCuentasPorPagar float64
+	if anio == 1 && mes == 0 {
+		// Mes 0: inicializar en 0
+		pasivoCuentasPorPagar = 0
+	} else {
+		// Mes 1 en adelante: PasivoCuentasxPagarCortoPlazo(mes anterior) + ISR(mes actual) - Egresos_PagosSRI(mes actual)
+		var balanceAnterior models.BalanceGeneral
+		mesAnterior := mes - 1
+		anioAnterior := anio
+		if mes == 1 {
+			if anio == 1 {
+				// Si es mes 1 del año 1, tomar mes 0 del año 1
+				mesAnterior = 0
+				anioAnterior = 1
+			} else {
+				// Si es mes 1 de años 2-5, tomar mes 12 del año anterior
+				mesAnterior = 12
+				anioAnterior = anio - 1
+			}
+		}
+
+		err := db.Where("plan_negocio_id = ? AND anio = ? AND mes = ?", planID, anioAnterior, mesAnterior).
+			First(&balanceAnterior).Error
+		if err == nil {
+			pasivoCuentasPorPagar = balanceAnterior.PasivoCuentasxPagarCortoPlazo
+		}
+
+		// Sumar ISR del mes actual
+		var estadoResultados models.EstadoResultados
+		err = db.Where("plan_negocio_id = ? AND anio = ? AND mes = ?", planID, anio, mes).
+			First(&estadoResultados).Error
+		if err == nil {
+			pasivoCuentasPorPagar += estadoResultados.ISR
+		}
+
+		// Restar pagos SRI del mes actual
+		var flujoEfectivo models.FlujoEfectivo
+		err = db.Where("plan_negocio_id = ? AND anio = ? AND mes = ?", planID, anio, mes).
+			First(&flujoEfectivo).Error
+		if err == nil {
+			pasivoCuentasPorPagar -= flujoEfectivo.Egresos_PagosSRI
+		}
+	}
+
+	// 11. Calcular PasivoOtrosCortoPlazo
+	var pasivoOtrosCortoPlazo float64
+	if anio == 1 && mes == 0 {
+		// Mes 0: inicializar en 0
+		pasivoOtrosCortoPlazo = 0
+	} else {
+		// Mes 1 en adelante: PasivoOtrosCortoPlazo(mes anterior) + PTU(mes actual) - Egresos_PagoPTU(mes actual)
+		var balanceAnterior models.BalanceGeneral
+		mesAnterior := mes - 1
+		anioAnterior := anio
+		if mes == 1 {
+			if anio == 1 {
+				// Si es mes 1 del año 1, tomar mes 0 del año 1
+				mesAnterior = 0
+				anioAnterior = 1
+			} else {
+				// Si es mes 1 de años 2-5, tomar mes 12 del año anterior
+				mesAnterior = 12
+				anioAnterior = anio - 1
+			}
+		}
+
+		err := db.Where("plan_negocio_id = ? AND anio = ? AND mes = ?", planID, anioAnterior, mesAnterior).
+			First(&balanceAnterior).Error
+		if err == nil {
+			pasivoOtrosCortoPlazo = balanceAnterior.PasivoOtrosCortoPlazo
+		}
+
+		// Sumar PTU del mes actual
+		var estadoResultados models.EstadoResultados
+		err = db.Where("plan_negocio_id = ? AND anio = ? AND mes = ?", planID, anio, mes).
+			First(&estadoResultados).Error
+		if err == nil {
+			pasivoOtrosCortoPlazo += estadoResultados.PTU
+		}
+
+		// Restar pagos PTU del mes actual
+		var flujoEfectivo models.FlujoEfectivo
+		err = db.Where("plan_negocio_id = ? AND anio = ? AND mes = ?", planID, anio, mes).
+			First(&flujoEfectivo).Error
+		if err == nil {
+			pasivoOtrosCortoPlazo -= flujoEfectivo.Egresos_PagoPTU
+		}
+	}
+
+	// 12. Calcular PasivoCortoPlazo_Suma
+	pasivoCortoPlazoSuma := pasivoProveedores + pasivoPrestamos + pasivoCuentasPorPagar + pasivoOtrosCortoPlazo
+
 	// Actualizar el registro de balance
 	updates := map[string]interface{}{
-		"corrientes_efectivo":        efectivo,
-		"corrientes_cuentasx_cobrar": cuentasPorCobrar,
-		"corrientes_inventarios":     inventarios,
-		"corrientes_otros":           corrientesOtros,
-		"corrientes_suma":            corrientesSuma,
-		"no_corrientes_suma":         noCorrientesSuma,
-		"total_activo":               totalActivo,
+		"corrientes_efectivo":               efectivo,
+		"corrientes_cuentasx_cobrar":        cuentasPorCobrar,
+		"corrientes_inventarios":            inventarios,
+		"corrientes_otros":                  corrientesOtros,
+		"corrientes_suma":                   corrientesSuma,
+		"no_corrientes_suma":                noCorrientesSuma,
+		"total_activo":                      totalActivo,
+		"pasivo_proveedores_corto_plazo":    pasivoProveedores,
+		"pasivo_prestamos_corto_plazo":      pasivoPrestamos,
+		"pasivo_cuentasx_pagar_corto_plazo": pasivoCuentasPorPagar,
+		"pasivo_otros_corto_plazo":          pasivoOtrosCortoPlazo,
+		"pasivo_corto_plazo_suma":           pasivoCortoPlazoSuma,
 	}
 
 	if err := db.Model(&balance).Updates(updates).Error; err != nil {

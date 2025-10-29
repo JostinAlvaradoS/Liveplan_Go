@@ -340,7 +340,6 @@ type BalanceGeneral struct {
 	NoCorrientes_Suma	   float64      `json:"no_corrientes_suma" gorm:"not null;index"`
 	TotalActivo 		  float64      `json:"total_activo" gorm:"not null;index"`
 
-	PasivoCortoPlazo    float64      `json:"pasivo_corto_plazo" gorm:"not null;index"`
 	PasivoProveedoresCortoPlazo    float64      `json:"pasivo_proveedores_corto_plazo" gorm:"not null;index"`
 	PasivoPrestamosCortoPlazo   float64      `json:"pasivo_prestamos_corto_plazo" gorm:"not null;index"`
 	PasivoCuentasxPagarCortoPlazo   float64      `json:"pasivo_cuentasx_pagar_corto_plazo" gorm:"not null;index"`
