@@ -41,8 +41,7 @@ func ListGastosOperacionByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Reque
 	}
 
 	// Mapas para sumar por año
-	var interesesPorAnio map[int]float64
-	interesesPorAnio = make(map[int]float64)
+	interesesPorAnio := make(map[int]float64)
 	// Declarar mapas para depreciaciones y amortizaciones mensuales
 	var depreciacionPorMes map[int]map[int]float64 = make(map[int]map[int]float64)
 	var amortizacionPorMes map[int]map[int]float64 = make(map[int]map[int]float64)
@@ -90,47 +89,14 @@ func ListGastosOperacionByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Reque
 	}
 
 	// Mapas para sumar por año y mes
-	interesesPorAnio = make(map[int]float64)
+	// interesesPorAnio ya fue calculado arriba; construir también interesesPorMes
 	interesesPorMes := make(map[int]map[int]float64)
 	for _, c := range cuotas {
-		interesesPorAnio[c.Anio] += c.Interes
 		if _, ok := interesesPorMes[c.Anio]; !ok {
 			interesesPorMes[c.Anio] = make(map[int]float64)
 		}
 		interesesPorMes[c.Anio][c.Mes] += c.Interes
 	}
-
-	depreciacionPorAnio = make(map[int]float64)
-	amortizacionPorAnio = make(map[int]float64)
-	for _, dep := range depreciaciones {
-		tipo := 0
-		if dep.DetalleInversion != nil {
-			tipo = int(dep.DetalleInversion.TipoID)
-		}
-		val := 0.0
-		if dep.DepreciacionMensual != nil {
-			val = *dep.DepreciacionMensual
-		}
-		for anio := 1; anio <= 5; anio++ {
-			for mes := 1; mes <= 12; mes++ {
-				if tipo == 1 {
-					depreciacionPorAnio[anio] += val
-					if _, ok := depreciacionPorMes[anio]; !ok {
-						depreciacionPorMes[anio] = make(map[int]float64)
-					}
-					depreciacionPorMes[anio][mes] += val
-				} else if tipo == 2 {
-					amortizacionPorAnio[anio] += val
-					if _, ok := amortizacionPorMes[anio]; !ok {
-						amortizacionPorMes[anio] = make(map[int]float64)
-					}
-					amortizacionPorMes[anio][mes] += val
-				}
-			}
-		}
-	}
-	// ...eliminado: ya no se multiplica por 12, el anual es la suma de las mensuales...
-
 	// Sumar gastos operacion anual y mensual por año
 	gastosOperacionPorAnio := make(map[int]float64)
 	gastosOperacionPorMes := make(map[int]map[int]float64)
