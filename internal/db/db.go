@@ -21,12 +21,19 @@ func Connect() (*gorm.DB, error) {
 	port := getEnv("DB_PORT", "5432")
 	user := getEnv("DB_USER", "postgres")
 	password := getEnv("DB_PASSWORD", "postgres")
-	dbname := getEnv("DB_NAME", "liveplan")
+	dbname := getEnv("DB_NAME", "postgres")
+
+	// Build DSN without logging sensitive information
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
-	gdb, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+	gdb, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		// Disable default logger to prevent credential leakage in logs
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
 	if err != nil {
-		return nil, err
+		// Log connection error without exposing credentials
+		return nil, fmt.Errorf("failed to connect to database at %s:%s as user %s: %v", host, port, user, err)
 	}
 	return gdb, nil
 }

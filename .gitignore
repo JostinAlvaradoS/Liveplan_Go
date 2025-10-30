@@ -1,0 +1,49 @@
+# Environment files (secrets)
+.env
+.env.*
+
+# DB backup artifacts
+db_data_backup.tgz
+*.sql
+*.dump
+
+# Docker compose overrides
+docker-compose.override.yml
+
+# Binary / build artifacts
+liveplan_backend_go
+/bin/
+/obj/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+
+# Go modules and vendor
+vendor/
+
+# IDEs and editor metadata
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Logs
+*.log
+
+# Temporary files
+/tmp/
+
+# Coverage
+coverage.out
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Node etc (if used in repo)
+node_modules/
+
+# Ignore the postgres data directory if accidentally committed
+/var/lib/postgresql/data

@@ -2,33 +2,44 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:15
+    image: postgres:15-alpine  # alpine = más ligero y seguro
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: liveplan
-    ports:
-      - "5432:5432"
+    env_file:
+      - .env
+    # All runtime environment variables (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
+    # are now expected to be provided in the local .env file for better security.
     volumes:
       - db_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"  # ¡SOLO localhost! (CRÍTICO)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres}"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: liveplan
-    ports:
-      - "8080:8080"
+    env_file:
+      - .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"  # only host (so host nginx can proxy), not public
+    networks:
+      - internal
     command: ["./liveplan_backend_go"]
 
 volumes:
   db_data:
+
+networks:
+  internal:
+    driver: bridge
+    internal: false
