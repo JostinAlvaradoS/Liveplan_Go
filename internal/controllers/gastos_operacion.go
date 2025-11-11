@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/JostinAlvaradoS/liveplan_backend_go/internal/models"
+	"github.com/JostinAlvaradoS/liveplan_backend_go/internal/procedimientos"
 	"gorm.io/gorm"
 )
 
@@ -16,6 +17,20 @@ func ListGastosOperacion(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(items)
+}
+
+func GetGastosOperacion(db *gorm.DB, w http.ResponseWriter, r *http.Request, id uint) {
+	var item models.GastosOperacion
+	if err := db.First(&item, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			http.NotFound(w, r)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(item)
 }
 
 func ListGastosOperacionByPlan(db *gorm.DB, w http.ResponseWriter, r *http.Request, planID uint) {
@@ -179,11 +194,18 @@ func UpdateGastosOperacionPatch(db *gorm.DB, w http.ResponseWriter, r *http.Requ
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	recalc, _ := body["recalc"].(bool)
 	delete(body, "id")
 	delete(body, "ID")
+	delete(body, "recalc")
 	if err := db.Model(&item).Updates(body).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	if recalc {
+		planID := item.PlanNegocioID
+		_ = procedimientos.Recalcular(db, planID)
 	}
 	json.NewEncoder(w).Encode(item)
 }
