@@ -11,7 +11,7 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:
-      - "127.0.0.1:5432:5432"  # ¡SOLO localhost! (CRÍTICO)
+      - "127.0.0.1:5432:5432"  # SOLO localhost
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres}"]
       interval: 30s
@@ -31,7 +31,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "127.0.0.1:8080:8080"  # only host (so host nginx can proxy), not public
+      - "127.0.0.1:8080:8080"  # only host 
     networks:
       - internal
     command: ["./liveplan_backend_go"]
