@@ -13,11 +13,11 @@ import (
 // anualidad (cuota fija mensual):
 //
 //	r = tasa_interes / 100 / 12 (ajustado por periodos de capitalización)
-//	cuota = P * r / (1 - (1+r)^-n) (si no está definida en DatosPrestamo)
+//	cuota = P * r / (1 - (1+r)^-n) (siempre recalculada si hay cambios en parámetros)
 //
-// Donde P = Monto, n = PeriodosAmortizacion. La función actualiza las filas
-// existentes en prestamo_cuotas ordenadas por periodo_mes; si hay más filas
-// de las necesarias, las deja; pero actualiza hasta n periodos.
+// Donde P = Monto, n = PeriodosAmortizacion. La función SIEMPRE recalcula
+// la cuota basada en los parámetros actuales para adaptarse a cambios en
+// Monto, TasaAnual, PeriodosCapitalizacion, o PeriodosAmortizacion.
 func CalcularPrestamo(db *gorm.DB, planID uint) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		var dp models.DatosPrestamo
@@ -78,11 +78,10 @@ func CalcularPrestamo(db *gorm.DB, planID uint) error {
 			return fmt.Errorf("no tasa de interés (anual o mensual) proporcionada para plan %d", planID)
 		}
 
-		// Usar cuota proporcionada si existe, sino calcularla
+		// SIEMPRE recalcular la cuota basada en parámetros actuales
+		// (P, r, n pueden haber cambiado desde el último cálculo)
 		var cuota float64
-		if dp.Cuota != 0 {
-			cuota = dp.Cuota
-		} else if r == 0 {
+		if r == 0 {
 			cuota = P / float64(n) // Pago igual si no hay interés
 		} else {
 			cuota = P * r / (1 - math.Pow(1+r, -float64(n)))
@@ -157,11 +156,10 @@ func CalcularPrestamo(db *gorm.DB, planID uint) error {
 			}
 		}
 
-		// Actualizar el campo Cuota en DatosPrestamo si fue calculado
-		if dp.Cuota == 0 {
-			if err := tx.Model(&dp).Update("cuota", cuota).Error; err != nil {
-				return fmt.Errorf("updating cuota in datos_prestamo for plan %d: %w", planID, err)
-			}
+		// Actualizar siempre el campo Cuota en DatosPrestamo con el valor recalculado
+		// Esto asegura que la cuota siempre refleje los parámetros actuales
+		if err := tx.Model(&dp).Update("cuota", cuota).Error; err != nil {
+			return fmt.Errorf("updating cuota in datos_prestamo for plan %d: %w", planID, err)
 		}
 
 		return nil
