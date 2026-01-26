@@ -63,13 +63,17 @@ func Recalcular(db *gorm.DB, planID uint) error {
 		return fmt.Errorf("recalcular (stage5): %w", err)
 	}
 
-
 	// Stage 3: depreciaciones + presupuestos (also adaptive)
 	stage6Tasks := []func() error{
 		func() error { return CalcularEvaluacion(db, planID) },
 	}
 	if err := runAdaptive(stage6Tasks); err != nil {
 		return fmt.Errorf("recalcular (stage6): %w", err)
+	}
+
+	// Set status to false when recalculation is complete
+	if err := SetStatusSensibilidad(db, planID, false); err != nil {
+		return fmt.Errorf("recalcular (set status): %w", err)
 	}
 
 	return nil

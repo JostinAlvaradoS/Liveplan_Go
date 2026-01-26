@@ -388,3 +388,9 @@ type AnalisisSensibilidad struct {
 	Valor 		float64      `json:"valor" gorm:"not null;index"`
 	PlanNegocio       *PlanNegocio `json:"plan_negocio,omitempty" gorm:"foreignKey:PlanNegocioID;constraint:OnDelete:CASCADE"`
 }
+
+type AnalisisSensibilidad_Status struct {
+	ID                 uint         `json:"id" gorm:"primaryKey;autoIncrement"`
+	PlanNegocioID      uint         `json:"plan_negocio_id" gorm:"not null;index"`
+	Status 				bool       `json:"status" gorm:"not null;index"`
+}

@@ -84,6 +84,8 @@ func (a *App) Routes() http.Handler {
 	RegisterConceptosEvaluacionRoutes(mux, a.DB)
 	RegisterEvaluacionProyectoRoutes(mux, a.DB)
 	RegisterAnalisisSensibilidadRoutes(mux, a.DB)
+	RegisterAnalisisSensibilidadStatusRoutes(mux, a.DB)
+	RegisterRecalcular2Routes(mux, a.DB)
 
 	return corsMiddleware(mux)
 }

@@ -59,6 +59,16 @@ func CreatePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Create default VariablesDeSensibilidad (zeros)
+		SensStatus := models.AnalisisSensibilidad_Status{
+			Status: false,
+			PlanNegocioID:    item.ID,
+		}
+		if err := tx.Create(&SensStatus).Error; err != nil {
+			return err
+		}
+
+
+		// Create default VariablesDeSensibilidad (zeros)
 		vs := models.VariablesDeSensibilidad{
 			Cantidad_volumen: 0,
 			Precio:           0,
@@ -361,6 +371,7 @@ func CreatePlanNegocio(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
+
 
 		// Crear PoliticasVenta y PoliticasCompra por defecto (80-20) para todos los meses de los 5 años
 		for anio := 1; anio <= 5; anio++ {
