@@ -8,90 +8,76 @@ import (
 )
 
 // Recalcular2 ejecuta el análisis de sensibilidad completo:
-// 1. Obtiene y guarda en memoria las variables de sensibilidad actuales
-// 2. Recorre todos los registros de AnalisisSensibilidad con todas las combinaciones
-// 3. Para cada combinación, actualiza las variables, ejecuta Recalcular y guarda el VAN
-// 4. Restaura las variables de sensibilidad originales
-// 5. Llama a Recalcular original para dejar todo en su estado final correcto
-// 6. Establece el status en true indicando que el análisis está completo
+// 1. Obtiene y guarda las variables de sensibilidad originales
+// 2. Recorre todos los registros de AnalisisSensibilidad
+// 3. Para cada combinación, actualiza variables, ejecuta cálculos y guarda VAN
+// 4. Restaura las variables originales y ejecuta Recalcular final
+// 5. Establece status en true
 func Recalcular2(db *gorm.DB, planID uint) error {
-	err := db.Transaction(func(tx *gorm.DB) error {
-		// 1. Obtener y guardar en memoria las variables de sensibilidad originales
-		var variablesOriginales models.VariablesDeSensibilidad
-		if err := tx.Where("plan_negocio_id = ?", planID).First(&variablesOriginales).Error; err != nil {
-			return fmt.Errorf("error al obtener VariablesDeSensibilidad originales: %w", err)
-		}
+	// 1. Obtener variables originales
+	var variablesOriginales models.VariablesDeSensibilidad
+	if err := db.Where("plan_negocio_id = ?", planID).First(&variablesOriginales).Error; err != nil {
+		return fmt.Errorf("error al obtener VariablesDeSensibilidad originales: %w", err)
+	}
 
-		// Guardar una copia en memoria
-		variablesBackup := variablesOriginales
+	variablesBackup := variablesOriginales
 
-		// 2. Obtener todos los registros de AnalisisSensibilidad para el plan
-		var analisisList []models.AnalisisSensibilidad
-		if err := tx.Where("plan_negocio_id = ?", planID).Find(&analisisList).Error; err != nil {
-			return fmt.Errorf("error al obtener AnalisisSensibilidad: %w", err)
-		}
+	// 2. Obtener todas las combinaciones de análisis de sensibilidad
+	var analisisList []models.AnalisisSensibilidad
+	if err := db.Where("plan_negocio_id = ?", planID).Find(&analisisList).Error; err != nil {
+		return fmt.Errorf("error al obtener AnalisisSensibilidad: %w", err)
+	}
 
-		// 3. Recorrer todas las combinaciones de variables de sensibilidad
-		for _, analisis := range analisisList {
-			// Crear copia temporal de las variables
-			variablesTemp := variablesOriginales
+	// 3. Recorrer cada combinación
+	for idx, analisis := range analisisList {
+		fmt.Printf("[%d] Vol: %+.2f%% | Costo: %+.2f%%\n", idx+1, analisis.Volumen, analisis.Costo)
 
-			// Aplicar las variaciones de volumen y costo
-			variablesTemp.Cantidad_volumen = variablesOriginales.Cantidad_volumen * (1 + analisis.Volumen/100.0)
-			variablesTemp.Costo = variablesOriginales.Costo * (1 + analisis.Costo/100.0)
-
-			// Actualizar VariablesDeSensibilidad en la BD
-			if err := tx.Model(&models.VariablesDeSensibilidad{}).
-				Where("plan_negocio_id = ?", planID).
-				Updates(map[string]interface{}{
-					"cantidad_volumen": variablesTemp.Cantidad_volumen,
-					"costo":            variablesTemp.Costo,
-				}).Error; err != nil {
-				return fmt.Errorf("error al actualizar VariablesDeSensibilidad: %w", err)
-			}
-
-			// Ejecutar Recalcular para actualizar todos los cálculos
-			// Nota: Recalcular debe ser llamado sin transacción anidada
-			if err := Recalcular(db, planID); err != nil {
-				return fmt.Errorf("error ejecutando Recalcular para análisis sensibilidad: %w", err)
-			}
-
-			// Obtener el VAN de EvaluacionProyecto
-			var evaluacion models.EvaluacionProyecto
-			if err := tx.Where("plan_negocio_id = ?", planID).First(&evaluacion).Error; err != nil {
-				return fmt.Errorf("error al obtener EvaluacionProyecto: %w", err)
-			}
-
-			// Actualizar el registro de AnalisisSensibilidad con el Valor (VAN)
-			if err := tx.Model(&analisis).Update("valor", evaluacion.VAN).Error; err != nil {
-				return fmt.Errorf("error al actualizar AnalisisSensibilidad con VAN: %w", err)
-			}
-		}
-
-		// 4. Restaurar las variables de sensibilidad originales
-		if err := tx.Model(&models.VariablesDeSensibilidad{}).
+		// Actualizar variables de sensibilidad directamente con los porcentajes
+		if err := db.Model(&models.VariablesDeSensibilidad{}).
 			Where("plan_negocio_id = ?", planID).
 			Updates(map[string]interface{}{
-				"cantidad_volumen": variablesBackup.Cantidad_volumen,
-				"costo":            variablesBackup.Costo,
-				"precio":           variablesBackup.Precio,
+				"cantidad_volumen": analisis.Volumen,
+				"costo":            analisis.Costo,
 			}).Error; err != nil {
-			return fmt.Errorf("error al restaurar VariablesDeSensibilidad originales: %w", err)
+			return fmt.Errorf("error actualizando variables [%d]: %w", idx+1, err)
 		}
 
-		return nil
-	})
+		// Ejecutar cálculos completos para esta combinación
+		if err := Recalcular(db, planID); err != nil {
+			return fmt.Errorf("error en Recalcular [%d]: %w", idx+1, err)
+		}
 
-	if err != nil {
-		return err
+		// Obtener VAN actualizado
+		var evaluacion models.EvaluacionProyecto
+		if err := db.Where("plan_negocio_id = ?", planID).First(&evaluacion).Error; err != nil {
+			return fmt.Errorf("error obteniendo VAN [%d]: %w", idx+1, err)
+		}
+
+		fmt.Printf("[%d] VAN: %.2f\n", idx+1, evaluacion.VAN)
+
+		// Guardar VAN en tabla de análisis
+		if err := db.Model(&analisis).Update("valor", evaluacion.VAN).Error; err != nil {
+			return fmt.Errorf("error guardando VAN [%d]: %w", idx+1, err)
+		}
 	}
 
-	// 5. Ejecutar Recalcular final para dejar todo en su estado correcto
+	// 4. Restaurar variables originales
+	if err := db.Model(&models.VariablesDeSensibilidad{}).
+		Where("plan_negocio_id = ?", planID).
+		Updates(map[string]interface{}{
+			"cantidad_volumen": variablesBackup.Cantidad_volumen,
+			"costo":            variablesBackup.Costo,
+			"precio":           variablesBackup.Precio,
+		}).Error; err != nil {
+		return fmt.Errorf("error al restaurar VariablesDeSensibilidad originales: %w", err)
+	}
+
+	// Ejecutar Recalcular final con variables originales
 	if err := Recalcular(db, planID); err != nil {
-		return fmt.Errorf("error ejecutando Recalcular final en recalcular2: %w", err)
+		return fmt.Errorf("error en Recalcular final: %w", err)
 	}
 
-	// 6. Set status to true when sensitivity analysis is complete
+	// 5. Establecer status en true
 	if err := SetStatusSensibilidad(db, planID, true); err != nil {
 		return fmt.Errorf("recalcular2 (set status): %w", err)
 	}

@@ -6,9 +6,13 @@ import (
 
 	"github.com/JostinAlvaradoS/liveplan_backend_go/internal/db"
 	"github.com/JostinAlvaradoS/liveplan_backend_go/internal/handlers"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load environment variables from .env file
+	_ = godotenv.Load()
+
 	dbconn, err := db.Connect()
 	if err != nil {
 		log.Fatalf("failed to connect db: %v", err)
