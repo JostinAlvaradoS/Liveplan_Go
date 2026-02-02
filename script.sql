@@ -1,5 +1,5 @@
 INSERT INTO "categoria_costos" (id, nombre) VALUES
-(1, 'Mano de obra'),(2, 'Materia prima'),(3, 'Gastos indirectos'),(4,'Otros');
+(1, 'Mano de obra'),(2, 'Materia prima'),(3, 'Gastos indirectos');
 
 insert into "tipo_inversion_inicials" (id,tipo) values (1, 'Activos fijos'),
                                                    (2, 'Gastos preoperativos y de constitucion'),

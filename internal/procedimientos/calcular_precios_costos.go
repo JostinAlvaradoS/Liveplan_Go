@@ -66,7 +66,7 @@ func CalcularPreciosYCostosPorPlan(db *gorm.DB, planID uint) error {
 
 			for _, c := range costos {
 				// If there is no computed precio for this product, set costo_calc NULL
-				if p.Precio== nil {
+				if p.Precio == nil {
 					if err := tx.Model(&models.CostosProdServ{}).
 						Where("id = ?", c.ID).
 						Updates(map[string]interface{}{"costo_calc": nil}).Error; err != nil {
